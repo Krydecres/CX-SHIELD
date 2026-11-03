@@ -18,7 +18,7 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="CX-SHIELD blank Flutter application.">
+  <meta name="description" content="CX-SHIELD Review Funnel">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -31,16 +31,75 @@
 
   <title>CX-SHIELD</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Script Speech Recognition tiếng Việt trực tiếp từ Micro trình duyệt (Epic 20: Voice Feedback) -->
+  <script>
+    window.cxShieldSpeech = {
+      recognition: null,
+      isListening: false,
+      start: function() {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRec) {
+          window.dispatchEvent(new CustomEvent('cx_speech_error', { 
+            detail: 'Trình duyệt không hỗ trợ Web Speech API. Hãy dùng Google Chrome.' 
+          }));
+          return false;
+        }
+
+        try {
+          if (this.recognition) {
+            try { this.recognition.abort(); } catch(e) {}
+          }
+
+          const rec = new SpeechRec();
+          this.recognition = rec;
+          rec.lang = 'vi-VN';
+          rec.continuous = true;
+          rec.interimResults = true;
+
+          rec.onresult = function(event) {
+            let fullText = '';
+            for (let i = 0; i < event.results.length; ++i) {
+              fullText += event.results[i][0].transcript;
+            }
+            window.dispatchEvent(new CustomEvent('cx_speech_result', { detail: fullText }));
+          };
+
+          rec.onerror = function(event) {
+            console.warn('SpeechRecognition error:', event.error);
+            let msg = event.error;
+            if (event.error === 'not-allowed') {
+              msg = 'Vui lòng nhấn Cho Phép (Allow) quyền Micro trên trình duyệt để ghi âm.';
+            } else if (event.error === 'no-speech') {
+              msg = 'Chưa nghe thấy giọng nói, vui lòng thử nói lại gần mic hơn.';
+            }
+            window.dispatchEvent(new CustomEvent('cx_speech_error', { detail: msg }));
+          };
+
+          rec.onend = function() {
+            window.cxShieldSpeech.isListening = false;
+            window.dispatchEvent(new CustomEvent('cx_speech_end'));
+          };
+
+          rec.start();
+          this.isListening = true;
+          return true;
+        } catch(err) {
+          window.dispatchEvent(new CustomEvent('cx_speech_error', { detail: err.toString() }));
+          return false;
+        }
+      },
+      stop: function() {
+        if (this.recognition) {
+          try { this.recognition.stop(); } catch(e) {}
+        }
+        this.isListening = false;
+        window.dispatchEvent(new CustomEvent('cx_speech_end'));
+      }
+    };
+  </script>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
-
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

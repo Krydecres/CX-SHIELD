@@ -1,0 +1,70 @@
+package com.cxshield.backend.entity;
+
+import java.time.Instant;
+import java.util.UUID;
+
+public class Feedback {
+    private UUID id;
+    private UUID responseId;
+    private UUID customerId;
+    private String commentText;
+    private String customerPhone;
+    private String contactPurpose;
+    private Instant consentAt;
+    private String voiceRecordUrl;
+    private Integer voiceDurationSeconds;
+    private String transcriptText;
+    private String sttStatus; // PENDING, PROCESSING, COMPLETED, FAILED
+    private boolean isUrgentCallback;
+    private int urgencyLevel; // 1 (bình thường), 2 (cao), 3 (khẩn cấp)
+    private String status;    // NEW, IN_PROGRESS, RESOLVED, CLOSED_WITH_NOTE
+    private Instant submittedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
+
+    public Feedback() {
+        this.id = UUID.randomUUID();
+        this.status = "NEW";
+        this.sttStatus = "PENDING";
+        this.urgencyLevel = 1;
+        this.submittedAt = Instant.now();
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
+    }
+
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+    public UUID getResponseId() { return responseId; }
+    public void setResponseId(UUID responseId) { this.responseId = responseId; }
+    public UUID getCustomerId() { return customerId; }
+    public void setCustomerId(UUID customerId) { this.customerId = customerId; }
+    public String getCommentText() { return commentText; }
+    public void setCommentText(String commentText) { this.commentText = commentText; }
+    public String getCustomerPhone() { return customerPhone; }
+    public void setCustomerPhone(String customerPhone) { this.customerPhone = customerPhone; }
+    public String getContactPurpose() { return contactPurpose; }
+    public void setContactPurpose(String contactPurpose) { this.contactPurpose = contactPurpose; }
+    public Instant getConsentAt() { return consentAt; }
+    public void setConsentAt(Instant consentAt) { this.consentAt = consentAt; }
+    public String getVoiceRecordUrl() { return voiceRecordUrl; }
+    public void setVoiceRecordUrl(String voiceRecordUrl) { this.voiceRecordUrl = voiceRecordUrl; }
+    public Integer getVoiceDurationSeconds() { return voiceDurationSeconds; }
+    public void setVoiceDurationSeconds(Integer voiceDurationSeconds) { this.voiceDurationSeconds = voiceDurationSeconds; }
+    public String getTranscriptText() { return transcriptText; }
+    public void setTranscriptText(String transcriptText) { this.transcriptText = transcriptText; }
+    public String getSttStatus() { return sttStatus; }
+    public void setSttStatus(String sttStatus) { this.sttStatus = sttStatus; }
+    public boolean isUrgentCallback() { return isUrgentCallback; }
+    public void setUrgentCallback(boolean urgentCallback) { isUrgentCallback = urgentCallback; }
+    public int getUrgencyLevel() { return urgencyLevel; }
+    public void setUrgencyLevel(int urgencyLevel) { this.urgencyLevel = urgencyLevel; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public Instant getSubmittedAt() { return submittedAt; }
+    public void setSubmittedAt(Instant submittedAt) { this.submittedAt = submittedAt; }
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+}
+
