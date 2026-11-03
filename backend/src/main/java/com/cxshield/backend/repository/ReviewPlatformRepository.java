@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Repository
+@Repository("surveyReviewPlatformRepository")
 public class ReviewPlatformRepository {
     private final Map<UUID, ReviewPlatform> store = new ConcurrentHashMap<>();
     private final Map<UUID, UUID> branchIndex = new ConcurrentHashMap<>();
@@ -49,4 +49,3 @@ public class ReviewPlatformRepository {
         return Optional.ofNullable(store.get(platformId));
     }
 }
-

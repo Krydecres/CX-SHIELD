@@ -41,7 +41,7 @@ public class SurveyServiceImpl implements SurveyService {
                              BusinessRepository businessRepository,
                              SurveySessionRepository surveySessionRepository,
                              SurveyResponseRepository surveyResponseRepository,
-                             ReviewPlatformRepository reviewPlatformRepository) {
+                             @org.springframework.beans.factory.annotation.Qualifier("surveyReviewPlatformRepository") ReviewPlatformRepository reviewPlatformRepository) {
         this.qrCodeRepository = qrCodeRepository;
         this.branchRepository = branchRepository;
         this.businessRepository = businessRepository;
