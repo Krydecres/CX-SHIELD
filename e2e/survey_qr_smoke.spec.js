@@ -1,4 +1,4 @@
-﻿const { test, expect } = require('@playwright/test');
+const { test, expect } = require('@playwright/test');
 
 const scenarios = [
   {
@@ -27,8 +27,11 @@ const scenarios = [
 for (const scenario of scenarios) {
   test(scenario.name, async ({ request }) => {
 
-    // 1. Quét QR và tạo phiên khảo sát
+    // 1. Quét QR và tạo phiên khảo sát (TC01)
+    const startQr = Date.now();
     const qrResponse = await request.get('/api/v1/surveys/qr/MC-B04');
+    const qrDuration = Date.now() - startQr;
+    console.log(`[TC01 - Scan QR MC-B04] Status: ${qrResponse.status()}, ResponseTime: ${qrDuration}ms`);
 
     expect(qrResponse.status()).toBe(200);
 
@@ -40,10 +43,13 @@ for (const scenario of scenarios) {
 
     const sessionId = qr.data.sessionId;
 
-    // 2. Kiểm tra session ban đầu
+    // 2. Kiểm tra session ban đầu (TC02)
+    const startSess = Date.now();
     const initialResponse = await request.get(
       `/api/v1/surveys/session/${sessionId}`
     );
+    const sessDuration = Date.now() - startSess;
+    console.log(`[TC02 - Get Initial Session] Status: ${initialResponse.status()}, ResponseTime: ${sessDuration}ms`);
 
     expect(initialResponse.status()).toBe(200);
 
@@ -52,13 +58,16 @@ for (const scenario of scenarios) {
     expect(initialSession.success).toBe(true);
     expect(initialSession.data.status).toBe('STARTED');
 
-    // 3. Gửi đánh giá
+    // 3. Gửi đánh giá (TC04/TC06/TC08)
+    const startRate = Date.now();
     const ratingResponse = await request.post('/api/v1/surveys/rate', {
       data: {
         sessionId,
         starRating: scenario.stars
       }
     });
+    const rateDuration = Date.now() - startRate;
+    console.log(`[Rate ${scenario.stars} stars] Status: ${ratingResponse.status()}, ResponseTime: ${rateDuration}ms`);
 
     expect(ratingResponse.status()).toBe(200);
 
