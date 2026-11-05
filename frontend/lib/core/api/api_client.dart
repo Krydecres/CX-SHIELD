@@ -20,12 +20,16 @@ class ApiException implements Exception {
 
 /// Gọi REST API Spring Boot, đính kèm access token Supabase của người đang đăng nhập.
 class ApiClient {
-  ApiClient({http.Client? httpClient, String? baseUrl})
+  ApiClient({http.Client? httpClient, String? baseUrl, String? Function()? accessToken})
       : _http = httpClient ?? http.Client(),
-        _baseUrl = baseUrl ?? AppConfig.apiBaseUrl;
+        _baseUrl = baseUrl ?? AppConfig.apiBaseUrl,
+        _accessToken = accessToken ?? _supabaseAccessToken;
 
   final http.Client _http;
   final String _baseUrl;
+  final String? Function() _accessToken;
+
+  static String? _supabaseAccessToken() => Supabase.instance.client.auth.currentSession?.accessToken;
 
   Future<dynamic> get(String path) => _send('GET', path);
 
@@ -34,7 +38,7 @@ class ApiClient {
   Future<dynamic> put(String path, Map<String, dynamic> body) => _send('PUT', path, body);
 
   Future<dynamic> _send(String method, String path, [Map<String, dynamic>? body]) async {
-    final token = Supabase.instance.client.auth.currentSession?.accessToken;
+    final token = _accessToken();
     final request = http.Request(method, Uri.parse('$_baseUrl/api/v1$path'))
       ..headers['Accept'] = 'application/json';
     if (token != null) {
