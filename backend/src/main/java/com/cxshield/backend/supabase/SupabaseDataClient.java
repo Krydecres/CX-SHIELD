@@ -5,6 +5,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -29,9 +30,14 @@ public class SupabaseDataClient {
 	private final RestClient restClient;
 	private final JsonMapper jsonMapper;
 
+	@Autowired
 	public SupabaseDataClient(CxShieldProperties properties, JsonMapper jsonMapper) {
+		this(properties, jsonMapper, RestClient.builder());
+	}
+
+	SupabaseDataClient(CxShieldProperties properties, JsonMapper jsonMapper, RestClient.Builder builder) {
 		this.jsonMapper = jsonMapper;
-		this.restClient = RestClient.builder()
+		this.restClient = builder
 			.baseUrl(properties.supabase().restUrl())
 			.defaultHeader("apikey", properties.supabase().publishableKey())
 			.defaultStatusHandler(HttpStatusCode::isError, (request, response) -> {

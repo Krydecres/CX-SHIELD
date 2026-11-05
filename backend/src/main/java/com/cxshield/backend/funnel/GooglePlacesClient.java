@@ -2,6 +2,7 @@ package com.cxshield.backend.funnel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -21,9 +22,14 @@ public class GooglePlacesClient {
 	private final RestClient restClient;
 	private final CxShieldProperties.Google google;
 
+	@Autowired
 	public GooglePlacesClient(CxShieldProperties properties) {
+		this(properties, RestClient.builder());
+	}
+
+	GooglePlacesClient(CxShieldProperties properties, RestClient.Builder builder) {
 		this.google = properties.google();
-		this.restClient = RestClient.builder().baseUrl("https://places.googleapis.com/v1").build();
+		this.restClient = builder.baseUrl("https://places.googleapis.com/v1").build();
 	}
 
 	public boolean isEnabled() {
