@@ -167,6 +167,7 @@ class _DashboardPageState extends State<DashboardPage> {
           width: 240,
           child: DropdownButtonFormField<String?>(
             initialValue: _filterBranchId,
+            isExpanded: true,
             decoration: const InputDecoration(labelText: 'Chi nhánh'),
             items: [
               const DropdownMenuItem<String?>(value: null, child: Text('Tất cả chi nhánh')),
@@ -183,6 +184,7 @@ class _DashboardPageState extends State<DashboardPage> {
           width: 220,
           child: DropdownButtonFormField<DashboardRange>(
             initialValue: _range,
+            isExpanded: true,
             decoration: const InputDecoration(labelText: 'Khoảng thời gian'),
             items: [
               for (final range in DashboardRange.values) DropdownMenuItem(value: range, child: Text(range.label)),

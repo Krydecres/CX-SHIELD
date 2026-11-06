@@ -18,6 +18,11 @@ Chức năng đã có:
 | --- | --- | --- | --- |
 | SCRUM-203 (E7.1) | Đăng ký / đăng nhập Email + Google, onboarding cơ sở | D3-01, D3-02, khung admin D3-00 | `GET /api/v1/me`, `POST /api/v1/onboarding`, `GET /api/v1/businesses/{id}/branches` |
 | SCRUM-207 (E4.1) | Cấu hình Google Place ID theo chi nhánh | D3-05 | `GET/PUT /api/v1/branches/{id}/google-place`, `POST /api/v1/branches/{id}/google-place/verifications` |
+| SCRUM-209 (E2.1) | Cài kênh cảnh báo Telegram / Zalo / Email, gửi thử, bật tắt | D4-01 | `GET /api/v1/branches/{id}/alert-channels`, `PUT .../alert-channels/{type}`, `POST .../alert-channels/{type}/tests` |
+| SCRUM-210 (E2.2) | Gửi cảnh báo khi có góp ý dưới ngưỡng, lưu `notifications` | X4-02 | Chạy theo sự kiện góp ý mới, không có API riêng |
+| SCRUM-211 (E3.1) | Dashboard tổng quan: thẻ số liệu, biểu đồ tuần, lọc chi nhánh và thời gian | D5-01 | `GET /api/v1/businesses/{id}/dashboard` |
+| SCRUM-215 (E8.1) | Bảng giá, chọn gói, nâng cấp, gia hạn | D5-10 | `GET /api/v1/plans`, `GET /api/v1/businesses/{id}/subscription` |
+| SCRUM-216 (E8.2) | Thanh toán VNPAY sandbox, thông tin xuất hoá đơn, tự kích hoạt gói | D5-11 | `POST /api/v1/businesses/{id}/checkouts`, `GET /api/v1/payments/vnpay/ipn`, `GET /api/v1/payments/vnpay/return` |
 
 Luồng: Flutter đăng nhập bằng Supabase Auth và gửi access token cho backend. Backend
 kiểm tra token qua JWKS (ES256) của Supabase rồi gọi Supabase Data API bằng chính token
@@ -42,6 +47,11 @@ Backend: sao chép `backend/.env.example` thành `backend/.env` và điền
 `GOOGLE_PLACES_API_KEY` là tuỳ chọn: khi có, nút "Kiểm tra kết nối" ở D3-05 lấy được tên
 và địa chỉ địa điểm từ Google và trạng thái chuyển thành "Đã kết nối"; khi không có,
 Place ID chỉ được kiểm tra định dạng và lưu với trạng thái "Chưa xác minh".
+
+`SUPABASE_SERVICE_ROLE_KEY` cần cho việc không có người đăng nhập: gửi cảnh báo khi khách góp ý,
+xác nhận thanh toán và cập nhật số liệu Google. Khoá này bỏ qua RLS nên chỉ đặt ở backend.
+`VNPAY_TMN_CODE` và `VNPAY_HASH_SECRET` lấy từ email sau khi đăng ký merchant test tại
+`https://sandbox.vnpayment.vn/devreg/`. `MAIL_*` là tuỳ chọn cho kênh Email.
 
 Frontend: sao chép `frontend/config/app.example.json` thành `frontend/config/app.json`
 và điền publishable key. Hai file `.env` / `app.json` không được commit.
