@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/api/api_client.dart';
 import '../../core/session/session_controller.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/admin_page.dart';
 import '../../core/widgets/form_label.dart';
 import '../../core/widgets/notice_banner.dart';
 import 'alert_channel_api.dart';
@@ -66,75 +67,55 @@ class _AlertChannelsPageState extends State<AlertChannelsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final branch = widget.session.selectedBranch;
     final config = _config;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(35, 24, 35, 40),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1115),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Cấu hình kênh cảnh báo', style: theme.textTheme.headlineSmall),
-            const SizedBox(height: 6),
-            Text(
-              'Chọn nơi nhận tin ngay khi khách gửi góp ý chưa hài lòng.',
-              style: theme.textTheme.bodyMedium?.copyWith(color: context.colors.textSecondary),
+    return AdminPage(
+      title: 'Kênh cảnh báo chi nhánh',
+      subtitle: config == null
+          ? 'Nơi nhận tin khi khách gửi góp ý chưa hài lòng.'
+          : 'Góp ý dưới ${config.thresholdStar} sao tại ${config.branchName} gửi tin tới các kênh đang bật.',
+      children: [
+        if (branch == null)
+          const NoticeBanner(message: 'Cơ sở chưa có chi nhánh nào để cấu hình.', type: NoticeType.warning)
+        else if (_loading)
+          const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()))
+        else if (_loadError != null)
+          NoticeBanner(
+            message: _loadError!,
+            type: NoticeType.error,
+            action: TextButton(onPressed: _load, child: const Text('Tải lại kênh')),
+          )
+        else if (config != null) ...[
+          if (!_canEdit) ...[
+            const NoticeBanner(
+              message: 'Bạn chỉ có quyền xem. Chủ cơ sở hoặc Quản lý chi nhánh mới được thay đổi cấu hình.',
+              type: NoticeType.warning,
             ),
-            const SizedBox(height: 20),
-            if (branch == null)
-              const NoticeBanner(message: 'Cơ sở chưa có chi nhánh nào để cấu hình.', type: NoticeType.warning)
-            else if (_loading)
-              const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()))
-            else if (_loadError != null)
-              NoticeBanner(
-                message: _loadError!,
-                type: NoticeType.error,
-                action: TextButton(onPressed: _load, child: const Text('Thử lại')),
-              )
-            else if (config != null) ...[
-              NoticeBanner(
-                message: 'Góp ý dưới ${config.thresholdStar} sao tại chi nhánh ${config.branchName} sẽ gửi cảnh báo '
-                    'tới các kênh đang bật.',
-              ),
-              const SizedBox(height: 16),
-              if (!_canEdit) ...[
-                const NoticeBanner(
-                  message: 'Bạn chỉ có quyền xem. Chủ cơ sở hoặc Quản lý chi nhánh mới được thay đổi cấu hình.',
-                  type: NoticeType.warning,
-                ),
-                const SizedBox(height: 16),
-              ],
-              Wrap(
-                spacing: 20,
-                runSpacing: 20,
-                children: [
-                  for (final kind in AlertChannelKind.values)
-                    SizedBox(
-                      width: 345,
-                      child: AlertChannelCard(
-                        key: ValueKey('${config.branchId}-${kind.apiCode}'),
-                        channel: config.channel(kind),
-                        canEdit: _canEdit,
-                        onSave: ({required enabled, botToken, chatId, webhookUrl, email}) => _api.save(
-                          config.branchId,
-                          kind,
-                          enabled: enabled,
-                          botToken: botToken,
-                          chatId: chatId,
-                          webhookUrl: webhookUrl,
-                          email: email,
-                        ),
-                        onTest: () => _api.sendTest(config.branchId, kind),
-                      ),
-                    ),
-                ],
-              ),
-            ],
+            const SizedBox(height: AppSpace.lg),
           ],
-        ),
-      ),
+          ResponsiveGrid(
+            minItemWidth: 300,
+            children: [
+              for (final kind in AlertChannelKind.values)
+                AlertChannelCard(
+                  key: ValueKey('${config.branchId}-${kind.apiCode}'),
+                  channel: config.channel(kind),
+                  canEdit: _canEdit,
+                  onSave: ({required enabled, botToken, chatId, webhookUrl, email}) => _api.save(
+                    config.branchId,
+                    kind,
+                    enabled: enabled,
+                    botToken: botToken,
+                    chatId: chatId,
+                    webhookUrl: webhookUrl,
+                    email: email,
+                  ),
+                  onTest: () => _api.sendTest(config.branchId, kind),
+                ),
+            ],
+          ),
+        ],
+      ],
     );
   }
 }
@@ -255,53 +236,54 @@ class _AlertChannelCardState extends State<AlertChannelCard> {
     final tested = _channel.lastTestedAt;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpace.xl),
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 children: [
-                  Expanded(child: Text(_channel.kind.label, style: theme.textTheme.titleMedium)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(_channel.kind.label, style: theme.textTheme.titleMedium),
+                        Text(channelStateLabel(_channel), style: theme.textTheme.bodySmall),
+                      ],
+                    ),
+                  ),
                   Switch(
                     value: _enabled,
                     onChanged: editable ? (value) => setState(() => _enabled = value) : null,
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpace.lg),
               ..._fields(editable),
+              const Spacer(),
               if (_notice != null) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpace.md),
                 NoticeBanner(message: _notice!.text, type: _notice!.type),
               ],
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: editable && _channel.configured ? _test : null,
-                      child: _testing
-                          ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Gửi thử'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: editable ? _save : null,
-                      child: _saving
-                          ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Lưu'),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: AppSpace.lg),
+              FilledButton(
+                onPressed: editable ? _save : null,
+                child: _saving
+                    ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Lưu kênh'),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpace.sm),
+              OutlinedButton(
+                onPressed: editable && _channel.configured ? _test : null,
+                child: _testing
+                    ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Gửi tin thử'),
+              ),
+              const SizedBox(height: AppSpace.md),
               Text(
-                tested == null ? 'Chưa gửi thử' : 'Gửi thử gần nhất: ${formatDateTime(tested)}',
-                style: theme.textTheme.bodySmall?.copyWith(color: context.colors.textMuted),
+                tested == null ? 'Chưa gửi tin thử' : 'Gửi thử gần nhất: ${formatDateTime(tested)}',
+                style: theme.textTheme.bodySmall,
               ),
             ],
           ),
@@ -321,7 +303,7 @@ class _AlertChannelCardState extends State<AlertChannelCard> {
               validator: (value) => validateBotToken(value, hasSavedToken: _channel.maskedBotToken != null),
             ),
             if (_channel.maskedBotToken != null) const _KeepSavedHint(),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpace.md),
             const FormLabel('Chat ID', required: true),
             TextFormField(
               controller: _chatId,
@@ -353,12 +335,18 @@ class _AlertChannelCardState extends State<AlertChannelCard> {
       };
 }
 
+/// Trạng thái kênh hiển thị dưới tên kênh.
+String channelStateLabel(AlertChannel channel) {
+  if (!channel.configured) return 'Chưa cấu hình';
+  return channel.enabled ? 'Đang bật' : 'Đang tắt';
+}
+
 class _KeepSavedHint extends StatelessWidget {
   const _KeepSavedHint();
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 4),
+        padding: const EdgeInsets.only(top: AppSpace.xs),
         child: Text(
           'Đã lưu và được che. Để trống nếu không đổi.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.colors.textMuted),

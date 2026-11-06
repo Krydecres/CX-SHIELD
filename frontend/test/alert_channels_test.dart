@@ -85,6 +85,12 @@ void main() {
       expect(validateAlertEmail('a@b'), isNotNull);
     });
 
+    test('trạng thái kênh', () {
+      expect(channelStateLabel(const AlertChannel(kind: AlertChannelKind.email, configured: false, enabled: false)), 'Chưa cấu hình');
+      expect(channelStateLabel(const AlertChannel(kind: AlertChannelKind.email, configured: true, enabled: true)), 'Đang bật');
+      expect(channelStateLabel(const AlertChannel(kind: AlertChannelKind.email, configured: true, enabled: false)), 'Đang tắt');
+    });
+
     test('định dạng ngày giờ', () {
       expect(formatDateTime(DateTime(2026, 11, 6, 9, 5)), '06/11/2026 09:05');
     });
@@ -132,13 +138,15 @@ void main() {
           theme: AppTheme.light(),
           home: Scaffold(
             body: SingleChildScrollView(
-              child: AlertChannelCard(
-                channel: channel,
-                canEdit: canEdit,
-                onSave: onSave ??
-                    ({required enabled, botToken, chatId, webhookUrl, email}) async =>
-                        AlertChannel(kind: channel.kind, configured: true, enabled: enabled),
-                onTest: onTest ?? () async => const AlertTestResult(success: true, message: 'Đã gửi'),
+              child: IntrinsicHeight(
+                child: AlertChannelCard(
+                  channel: channel,
+                  canEdit: canEdit,
+                  onSave: onSave ??
+                      ({required enabled, botToken, chatId, webhookUrl, email}) async =>
+                          AlertChannel(kind: channel.kind, configured: true, enabled: enabled),
+                  onTest: onTest ?? () async => const AlertTestResult(success: true, message: 'Đã gửi'),
+                ),
               ),
             ),
           ),
@@ -148,7 +156,7 @@ void main() {
       await tester.pumpWidget(card(const AlertChannel(kind: AlertChannelKind.telegram, configured: false, enabled: false)));
 
       expect(tester.widget<OutlinedButton>(find.byType(OutlinedButton)).onPressed, isNull);
-      await tester.tap(find.text('Lưu'));
+      await tester.tap(find.text('Lưu kênh'));
       await tester.pump();
 
       expect(find.text('Vui lòng nhập Bot Token.'), findsOneWidget);
@@ -173,7 +181,7 @@ void main() {
 
       await tester.enterText(find.byType(TextFormField).first, botToken);
       await tester.enterText(find.byType(TextFormField).last, '-100');
-      await tester.tap(find.text('Lưu'));
+      await tester.tap(find.text('Lưu kênh'));
       await tester.pumpAndSettle();
 
       expect(sentToken, botToken);
@@ -188,7 +196,7 @@ void main() {
         onTest: () async => const AlertTestResult(success: false, message: 'Hệ thống chưa cấu hình máy chủ gửi email.'),
       ));
 
-      await tester.tap(find.text('Gửi thử'));
+      await tester.tap(find.text('Gửi tin thử'));
       await tester.pumpAndSettle();
 
       expect(find.text('Hệ thống chưa cấu hình máy chủ gửi email.'), findsOneWidget);
@@ -199,9 +207,9 @@ void main() {
         const AlertChannel(kind: AlertChannelKind.email, configured: true, enabled: true, email: 'a@b.vn'),
         onTest: () async => AlertTestResult(success: true, message: 'Đã gửi', lastTestedAt: DateTime(2026, 11, 6, 9, 5)),
       ));
-      expect(find.text('Chưa gửi thử'), findsOneWidget);
+      expect(find.text('Chưa gửi tin thử'), findsOneWidget);
 
-      await tester.tap(find.text('Gửi thử'));
+      await tester.tap(find.text('Gửi tin thử'));
       await tester.pumpAndSettle();
 
       expect(find.text('Gửi thử gần nhất: 06/11/2026 09:05'), findsOneWidget);
@@ -214,7 +222,7 @@ void main() {
             throw ApiException(statusCode: 403, code: 'FORBIDDEN', message: 'Không có quyền'),
       ));
 
-      await tester.tap(find.text('Lưu'));
+      await tester.tap(find.text('Lưu kênh'));
       await tester.pumpAndSettle();
 
       expect(find.text('Không có quyền'), findsOneWidget);

@@ -101,11 +101,11 @@ void main() {
     });
 
     test('gói đang dùng thì gia hạn', () {
-      expect(planActionLabel(basic, BillingCycle.monthly, current('p1'), plans), 'Gia hạn');
+      expect(planActionLabel(basic, BillingCycle.monthly, current('p1'), plans), 'Gia hạn gói');
     });
 
     test('gói cao hơn thì nâng cấp', () {
-      expect(planActionLabel(advanced, BillingCycle.monthly, current('p1'), plans), 'Nâng cấp');
+      expect(planActionLabel(advanced, BillingCycle.monthly, current('p1'), plans), 'Nâng cấp gói');
     });
 
     test('gói thấp hơn thì chọn gói', () {
@@ -187,7 +187,7 @@ void main() {
 
   group('giao diện bảng giá', () {
     Widget wrap(Widget child) =>
-        MaterialApp(theme: AppTheme.light(), home: Scaffold(body: SingleChildScrollView(child: child)));
+        MaterialApp(theme: AppTheme.light(), home: Scaffold(body: SingleChildScrollView(child: IntrinsicHeight(child: child))));
 
     testWidgets('thẻ gói hiện giá theo chu kỳ', (tester) async {
       await tester.pumpWidget(wrap(PlanCard(plan: basic, cycle: BillingCycle.yearly, actionLabel: 'Chọn gói', onChoose: () {})));
@@ -201,11 +201,11 @@ void main() {
       await tester.pumpWidget(wrap(PlanCard(
         plan: basic,
         cycle: BillingCycle.monthly,
-        actionLabel: 'Nâng cấp',
+        actionLabel: 'Nâng cấp gói',
         onChoose: () => chosen = true,
       )));
 
-      await tester.tap(find.text('Nâng cấp'));
+      await tester.tap(find.text('Nâng cấp gói'));
 
       expect(chosen, isTrue);
     });
@@ -214,14 +214,14 @@ void main() {
       await tester.pumpWidget(wrap(PlanCard(plan: basic, cycle: BillingCycle.monthly, actionLabel: null, onChoose: () {})));
 
       expect(find.text('Đang sử dụng'), findsOneWidget);
-      expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNull);
+      expect(tester.widget<OutlinedButton>(find.byType(OutlinedButton)).onPressed, isNull);
     });
 
     testWidgets('chu kỳ gói không có thì không bấm được', (tester) async {
       await tester.pumpWidget(wrap(PlanCard(plan: advanced, cycle: BillingCycle.lifetime, actionLabel: 'Mua', onChoose: () {})));
 
       expect(find.text('Liên hệ'), findsOneWidget);
-      expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNull);
+      expect(tester.widget<OutlinedButton>(find.byType(OutlinedButton)).onPressed, isNull);
     });
 
     testWidgets('gói trọn đời hiện ấn phẩm kèm theo', (tester) async {
@@ -232,10 +232,10 @@ void main() {
     });
 
     testWidgets('bảng so sánh hiện giới hạn', (tester) async {
-      await tester.pumpWidget(wrap(const PlanComparisonTable(plans: [
+      await tester.pumpWidget(MaterialApp(theme: AppTheme.light(), home: const Scaffold(body: PlanComparisonTable(plans: [
         BillingPlan(id: 'p1', name: 'Cơ bản', maxBranches: 1, maxQrCodes: 10),
         BillingPlan(id: 'p2', name: 'Nâng cao', maxBranches: 1),
-      ])));
+      ]))));
 
       expect(find.text('10'), findsOneWidget);
       expect(find.text('Không giới hạn'), findsOneWidget);

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/api/api_client.dart';
 import '../../core/session/session_controller.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/admin_page.dart';
 import '../../core/widgets/notice_banner.dart';
 import '../d4_01_alert_channels/alert_channels_page.dart' show formatDateTime;
 import 'billing_api.dart';
@@ -79,92 +80,75 @@ class _PricingPageState extends State<PricingPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final lifetimePlans = _plans.where((plan) => plan.lifetimePrice != null).toList();
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(35, 24, 35, 40),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1115),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Bảng giá và chọn gói', style: theme.textTheme.headlineSmall),
-            const SizedBox(height: 6),
-            Text(
-              'Chọn gói phù hợp với quy mô cơ sở. Giá chưa gồm VAT $vatPercent%.',
-              style: theme.textTheme.bodyMedium?.copyWith(color: context.colors.textSecondary),
-            ),
-            const SizedBox(height: 20),
-            if (_loading)
-              const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()))
-            else if (_error != null)
-              NoticeBanner(
-                message: _error!,
-                type: NoticeType.error,
-                action: TextButton(onPressed: _load, child: const Text('Thử lại')),
-              )
-            else ...[
-              if (!_isOwner) ...[
-                const NoticeBanner(message: 'Chỉ Chủ cơ sở được mua hoặc gia hạn gói dịch vụ.', type: NoticeType.warning),
-                const SizedBox(height: 16),
-              ],
-              if (_subscription?.isActive ?? false) ...[
-                NoticeBanner(message: currentPlanText(_subscription!)),
-                const SizedBox(height: 16),
-              ],
-              SegmentedButton<BillingCycle>(
-                segments: const [
-                  ButtonSegment(value: BillingCycle.monthly, label: Text('Theo tháng')),
-                  ButtonSegment(value: BillingCycle.yearly, label: Text('Theo năm, giảm 20%')),
-                ],
-                selected: {_cycle},
-                onSelectionChanged: (value) => setState(() => _cycle = value.first),
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                children: [
-                  for (final plan in _plans)
-                    SizedBox(
-                      width: 340,
-                      child: PlanCard(
-                        plan: plan,
-                        cycle: _cycle,
-                        actionLabel: planActionLabel(plan, _cycle, _subscription, _plans),
-                        onChoose: _isOwner ? () => _choose(plan, _cycle) : null,
-                      ),
-                    ),
-                ],
-              ),
-              if (lifetimePlans.isNotEmpty) ...[
-                const SizedBox(height: 28),
-                Text('Gói ấn phẩm kèm tài khoản trọn đời', style: theme.textTheme.titleMedium),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
-                  children: [
-                    for (final plan in lifetimePlans)
-                      SizedBox(
-                        width: 340,
-                        child: PlanCard(
-                          plan: plan,
-                          cycle: BillingCycle.lifetime,
-                          titlePrefix: 'Trọn đời ',
-                          actionLabel: 'Mua gói trọn đời',
-                          onChoose: _isOwner ? () => _choose(plan, BillingCycle.lifetime) : null,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 28),
-              Text('So sánh chi tiết các gói', style: theme.textTheme.titleMedium),
-              const SizedBox(height: 8),
-              PlanComparisonTable(plans: _plans),
-            ],
+    return AdminPage(
+      title: 'Gói dịch vụ Review Funnel',
+      subtitle: 'Giá chưa gồm VAT $vatPercent%. Trả theo năm giảm 20% so với trả theo tháng.',
+      actions: SizedBox(
+        width: 260,
+        child: SegmentedButton<BillingCycle>(
+          showSelectedIcon: false,
+          segments: const [
+            ButtonSegment(value: BillingCycle.monthly, label: Text('Theo tháng')),
+            ButtonSegment(value: BillingCycle.yearly, label: Text('Theo năm')),
           ],
+          selected: {_cycle},
+          onSelectionChanged: (value) => setState(() => _cycle = value.first),
         ),
       ),
+      children: [
+        if (_loading)
+          const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()))
+        else if (_error != null)
+          NoticeBanner(
+            message: _error!,
+            type: NoticeType.error,
+            action: TextButton(onPressed: _load, child: const Text('Tải lại bảng giá')),
+          )
+        else ...[
+          if (!_isOwner) ...[
+            const NoticeBanner(message: 'Chỉ Chủ cơ sở được mua hoặc gia hạn gói dịch vụ.', type: NoticeType.warning),
+            const SizedBox(height: AppSpace.lg),
+          ],
+          if (_subscription?.isActive ?? false) ...[
+            NoticeBanner(message: currentPlanText(_subscription!)),
+            const SizedBox(height: AppSpace.lg),
+          ],
+          ResponsiveGrid(
+            children: [
+              for (final plan in _plans)
+                PlanCard(
+                  plan: plan,
+                  cycle: _cycle,
+                  actionLabel: planActionLabel(plan, _cycle, _subscription, _plans),
+                  primary: _subscription?.isActive == true && _subscription?.planId == plan.id,
+                  onChoose: _isOwner ? () => _choose(plan, _cycle) : null,
+                ),
+            ],
+          ),
+          if (lifetimePlans.isNotEmpty) ...[
+            const SizedBox(height: AppSpace.xxl),
+            Text('Gói trọn đời kèm ấn phẩm', style: theme.textTheme.titleLarge),
+            const SizedBox(height: AppSpace.xs),
+            Text('Trả một lần, dùng tài khoản không thời hạn và nhận bộ ấn phẩm QR in sẵn.', style: theme.textTheme.bodySmall),
+            const SizedBox(height: AppSpace.lg),
+            ResponsiveGrid(
+              maxColumns: 2,
+              children: [
+                for (final plan in lifetimePlans)
+                  PlanCard(
+                    plan: plan,
+                    cycle: BillingCycle.lifetime,
+                    titlePrefix: 'Trọn đời ',
+                    actionLabel: 'Mua gói trọn đời',
+                    onChoose: _isOwner ? () => _choose(plan, BillingCycle.lifetime) : null,
+                  ),
+              ],
+            ),
+          ],
+          const SizedBox(height: AppSpace.xxl),
+          SectionCard(title: 'So sánh giá và giới hạn các gói', child: PlanComparisonTable(plans: _plans)),
+        ],
+      ],
     );
   }
 }
@@ -184,6 +168,7 @@ class PlanCard extends StatelessWidget {
     required this.actionLabel,
     required this.onChoose,
     this.titlePrefix = '',
+    this.primary = false,
   });
 
   final BillingPlan plan;
@@ -192,6 +177,9 @@ class PlanCard extends StatelessWidget {
   final VoidCallback? onChoose;
   final String titlePrefix;
 
+  /// Nút tô đặc chỉ dành cho gói đang dùng, các gói khác dùng nút viền.
+  final bool primary;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -199,44 +187,45 @@ class PlanCard extends StatelessWidget {
     final features = cycle == BillingCycle.lifetime && plan.includedPrintItems != null
         ? [plan.includedPrintItems!, ...plan.features]
         : plan.features;
-    return Card(
+    final onPressed = actionLabel == null || price == null ? null : onChoose;
+    final label = Text(actionLabel ?? 'Đang sử dụng');
+    final card = Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpace.xl),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text('$titlePrefix${plan.name}', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 10),
-            Text(
-              price == null ? 'Liên hệ' : formatMoney(price),
-              style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            Text(cycle.unit, style: theme.textTheme.bodySmall?.copyWith(color: context.colors.textMuted)),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpace.md),
+            Text(price == null ? 'Liên hệ' : formatMoney(price), style: theme.textTheme.headlineSmall),
+            Text(cycle.unit, style: theme.textTheme.bodySmall),
+            const SizedBox(height: AppSpace.lg),
             for (final feature in features)
               Padding(
-                padding: const EdgeInsets.only(bottom: 6),
+                padding: const EdgeInsets.only(bottom: AppSpace.sm),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.check, size: 18, color: context.colors.success),
-                    const SizedBox(width: 8),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Icon(Icons.check, size: 16, color: context.colors.success),
+                    ),
+                    const SizedBox(width: AppSpace.sm),
                     Expanded(child: Text(feature)),
                   ],
                 ),
               ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: actionLabel == null || price == null ? null : onChoose,
-                child: Text(actionLabel ?? 'Đang sử dụng'),
-              ),
-            ),
+            const Spacer(),
+            const SizedBox(height: AppSpace.md),
+            if (primary)
+              FilledButton(onPressed: onPressed, child: label)
+            else
+              OutlinedButton(onPressed: onPressed, child: label),
           ],
         ),
       ),
     );
+    return onPressed == null ? card : HoverCard(child: card);
   }
 }
 
@@ -247,38 +236,35 @@ class PlanComparisonTable extends StatelessWidget {
 
   static String _limit(int? value) => value == null ? 'Không giới hạn' : value.toString();
 
+  static String _price(int? value) => value == null ? '—' : formatMoney(value);
+
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        columns: [
-          const DataColumn(label: Text('Tiêu chí')),
-          for (final plan in plans) DataColumn(label: Text(plan.name)),
-        ],
-        rows: [
-          DataRow(cells: [
-            const DataCell(Text('Giá theo tháng')),
-            for (final plan in plans) DataCell(Text(plan.monthlyPrice == null ? '—' : formatMoney(plan.monthlyPrice!))),
-          ]),
-          DataRow(cells: [
-            const DataCell(Text('Giá theo năm')),
-            for (final plan in plans) DataCell(Text(plan.yearlyPrice == null ? '—' : formatMoney(plan.yearlyPrice!))),
-          ]),
-          DataRow(cells: [
-            const DataCell(Text('Giá trọn đời')),
-            for (final plan in plans) DataCell(Text(plan.lifetimePrice == null ? '—' : formatMoney(plan.lifetimePrice!))),
-          ]),
-          DataRow(cells: [
-            const DataCell(Text('Số chi nhánh')),
-            for (final plan in plans) DataCell(Text(_limit(plan.maxBranches))),
-          ]),
-          DataRow(cells: [
-            const DataCell(Text('Số mã QR')),
-            for (final plan in plans) DataCell(Text(_limit(plan.maxQrCodes))),
-          ]),
-        ],
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: constraints.maxWidth),
+          child: DataTable(
+            columns: [
+              const DataColumn(label: Text('Tiêu chí')),
+              for (final plan in plans) DataColumn(label: Text(plan.name)),
+            ],
+            rows: [
+              _row('Giá theo tháng', (plan) => _price(plan.monthlyPrice)),
+              _row('Giá theo năm', (plan) => _price(plan.yearlyPrice)),
+              _row('Giá trọn đời', (plan) => _price(plan.lifetimePrice)),
+              _row('Số chi nhánh', (plan) => _limit(plan.maxBranches)),
+              _row('Số mã QR', (plan) => _limit(plan.maxQrCodes)),
+            ],
+          ),
+        ),
       ),
     );
   }
+
+  DataRow _row(String label, String Function(BillingPlan plan) value) => DataRow(cells: [
+        DataCell(Text(label)),
+        for (final plan in plans) DataCell(Text(value(plan))),
+      ]);
 }

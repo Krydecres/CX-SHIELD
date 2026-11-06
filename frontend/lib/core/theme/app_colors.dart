@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 /// * 30% – xanh slate: menu bên, thông báo, khung thông tin, nhãn trạng thái.
 /// * 10% – cam nhấn: nút hành động chính, mục menu đang chọn, liên kết.
 ///
+/// Chữ đạt tương phản tối thiểu 4.5:1 trên nền, nhãn trên nút accent cũng vậy.
+///
 /// Lấy màu theo theme hiện tại bằng `context.colors`.
 @immutable
 class AppColors extends ThemeExtension<AppColors> {
@@ -42,7 +44,7 @@ class AppColors extends ThemeExtension<AppColors> {
     border: Color(0xFFE3E6EB),
     textPrimary: Color(0xFF1B2333),
     textSecondary: Color(0xFF5B6475),
-    textMuted: Color(0xFF8A93A3),
+    textMuted: Color(0xFF6B7485),
     // 30 – menu bên, thông báo, khung phụ
     sidebar: Color(0xFF23395B),
     sidebarHover: Color(0xFF2E4A73),
@@ -52,16 +54,16 @@ class AppColors extends ThemeExtension<AppColors> {
     secondarySoft: Color(0xFFE8EEF6),
     secondaryBorder: Color(0xFFC8D5E6),
     // 10 – chức năng chính
-    accent: Color(0xFFF26B21),
-    accentHover: Color(0xFFD95A14),
+    accent: Color(0xFFBC4C0E),
+    accentHover: Color(0xFFA2410B),
     accentSoft: Color(0xFFFDEDE3),
     onAccent: Color(0xFFFFFFFF),
     // Màu ngữ nghĩa cho trạng thái
-    success: Color(0xFF1E8E5A),
+    success: Color(0xFF17774A),
     successSoft: Color(0xFFE3F4EC),
-    warning: Color(0xFFB7791F),
+    warning: Color(0xFF8A5A10),
     warningSoft: Color(0xFFFBF1DE),
-    error: Color(0xFFD64545),
+    error: Color(0xFFC23030),
     errorSoft: Color(0xFFFCE8E8),
   );
 
@@ -71,7 +73,7 @@ class AppColors extends ThemeExtension<AppColors> {
     border: Color(0xFF2A3241),
     textPrimary: Color(0xFFE7EAF0),
     textSecondary: Color(0xFFA6AEBC),
-    textMuted: Color(0xFF768091),
+    textMuted: Color(0xFF8A94A6),
     sidebar: Color(0xFF16233A),
     sidebarHover: Color(0xFF22344F),
     onSidebar: Color(0xFFF1F4F9),
@@ -79,10 +81,10 @@ class AppColors extends ThemeExtension<AppColors> {
     secondary: Color(0xFFA9C2E6),
     secondarySoft: Color(0xFF17243A),
     secondaryBorder: Color(0xFF2D4263),
-    accent: Color(0xFFF26B21),
-    accentHover: Color(0xFFFF8040),
+    accent: Color(0xFFF2793A),
+    accentHover: Color(0xFFFF8F57),
     accentSoft: Color(0xFF3A2416),
-    onAccent: Color(0xFFFFFFFF),
+    onAccent: Color(0xFF1F1206),
     success: Color(0xFF45C38A),
     successSoft: Color(0xFF132B20),
     warning: Color(0xFFE3AC4E),

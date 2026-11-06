@@ -123,7 +123,7 @@ void main() {
       expect(find.text('Telegram Bot'), findsOneWidget);
       expect(find.text('Zalo Webhook'), findsOneWidget);
       expect(find.text('Email'), findsOneWidget);
-      expect(find.textContaining('Góp ý dưới 4 sao'), findsOneWidget);
+      expect(find.textContaining('Góp ý dưới 4 sao tại Quận 1'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -131,7 +131,7 @@ void main() {
       await show(tester, AlertChannelsPage(session: session()));
 
       expect(find.text('Không tìm thấy'), findsOneWidget);
-      expect(find.text('Thử lại'), findsOneWidget);
+      expect(find.text('Tải lại kênh'), findsOneWidget);
     });
 
     testWidgets('nhân viên chỉ được xem', (tester) async {
@@ -161,6 +161,7 @@ void main() {
       expect(find.text('684'), findsWidgets);
       expect(find.text('Chưa có dữ liệu'), findsNWidgets(2));
       expect(find.text('Lượt quét theo tuần'), findsOneWidget);
+      expect(find.text('Phễu chuyển đổi'), findsOneWidget);
 
       await tester.tap(find.text('Tất cả chi nhánh'));
       await tester.pumpAndSettle();
@@ -184,7 +185,7 @@ void main() {
     testWidgets('lỗi tải số liệu có nút thử lại', (tester) async {
       await show(tester, DashboardPage(session: session()));
 
-      expect(find.text('Thử lại'), findsOneWidget);
+      expect(find.text('Tải lại số liệu'), findsOneWidget);
     });
   });
 
@@ -194,9 +195,9 @@ void main() {
 
       expect(find.text('200.000đ'), findsWidgets);
       expect(find.text('Trọn đời Cơ bản'), findsOneWidget);
-      expect(find.text('So sánh chi tiết các gói'), findsOneWidget);
+      expect(find.text('So sánh giá và giới hạn các gói'), findsOneWidget);
 
-      await tester.tap(find.text('Theo năm, giảm 20%'));
+      await tester.tap(find.text('Theo năm'));
       await tester.pumpAndSettle();
       expect(find.text('/ năm'), findsNWidgets(2));
 
@@ -216,8 +217,8 @@ void main() {
 
       await show(tester, PricingPage(session: session()));
 
-      expect(find.text('Gia hạn'), findsOneWidget);
-      expect(find.text('Nâng cấp'), findsOneWidget);
+      expect(find.text('Gia hạn gói'), findsOneWidget);
+      expect(find.text('Nâng cấp gói'), findsOneWidget);
       expect(find.textContaining('hết hạn ngày 06/12/2026'), findsOneWidget);
     });
 
@@ -226,7 +227,7 @@ void main() {
 
       expect(find.text('Chỉ Chủ cơ sở được mua hoặc gia hạn gói dịch vụ.'), findsOneWidget);
       expect(requests.where((r) => r.url.path.endsWith('/subscription')), isEmpty);
-      expect(tester.widget<FilledButton>(find.byType(FilledButton).first).onPressed, isNull);
+      expect(tester.widget<OutlinedButton>(find.byType(OutlinedButton).first).onPressed, isNull);
     });
   });
 
@@ -328,7 +329,7 @@ void main() {
       await show(tester, PaymentResultPage(session: session()));
 
       expect(find.text('Không xác nhận được kết quả giao dịch.'), findsOneWidget);
-      await tester.tap(find.text('Về Tổng quan'));
+      await tester.tap(find.text('Mở trang Tổng quan'));
       await tester.pumpAndSettle();
       expect(find.text('tổng quan'), findsOneWidget);
     });

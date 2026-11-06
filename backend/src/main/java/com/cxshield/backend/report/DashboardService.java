@@ -79,7 +79,7 @@ public class DashboardService {
 		}
 
 		GoogleWeek latest = google.isEmpty() ? null : google.lastEntry().getValue();
-		return new DashboardResponse(branchId, from, to, stats.scanCount(), stats.ratedCount(),
+		return new DashboardResponse(branchId, from, to, stats.scanCount(), stats.ratedCount(), stats.satisfiedCount(),
 				percent(stats.satisfiedCount(), stats.ratedCount()), stats.googleRedirectCount(),
 				latest == null ? null : latest.reviewCount(), latest == null ? null : latest.avgRating(), points);
 	}

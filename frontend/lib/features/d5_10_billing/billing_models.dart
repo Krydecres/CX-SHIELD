@@ -156,10 +156,10 @@ int vatOf(int price) => price * vatPercent ~/ 100;
 String? planActionLabel(BillingPlan plan, BillingCycle cycle, Subscription? current, List<BillingPlan> plans) {
   if (current == null || !current.isActive) return 'Chọn gói';
   if (current.planId == plan.id) {
-    return current.cycle == BillingCycle.lifetime ? null : 'Gia hạn';
+    return current.cycle == BillingCycle.lifetime ? null : 'Gia hạn gói';
   }
   final currentPrice = plans.where((p) => p.id == current.planId).firstOrNull?.monthlyPrice ?? 0;
-  return (plan.monthlyPrice ?? 0) > currentPrice ? 'Nâng cấp' : 'Chọn gói';
+  return (plan.monthlyPrice ?? 0) > currentPrice ? 'Nâng cấp gói' : 'Chọn gói';
 }
 
 String? validateTaxCode(String? value) {

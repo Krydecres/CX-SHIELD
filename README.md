@@ -32,6 +32,15 @@ Màu giao diện theo quy tắc 60-30-10 (`frontend/lib/core/theme/app_colors.da
 60% nền trung tính, 30% xanh slate cho menu bên / thông báo / khung thông tin,
 10% cam cho nút hành động chính, mục menu đang chọn và liên kết.
 
+Quy tắc giao diện các màn quản trị (`frontend/lib/core/widgets/admin_page.dart`), lấy các nguyên tắc
+dùng được cho app từ [taste-skill](https://github.com/leonxlnx/taste-skill):
+
+- Chữ tối thiểu 13px, phông Be Vietnam Pro. Chữ và nhãn nút đạt tương phản 4.5:1 ở cả giao diện sáng và tối.
+- Khoảng cách theo thang `AppSpace`, lưới cột đều bằng `ResponsiveGrid`, kiểm tra ở bề rộng 1440px và 390px.
+- Mỗi màn có một hành động chính dùng nút tô đặc. Nhãn nút gồm động từ và đối tượng, ví dụ "Lưu kênh".
+- Chuyển động dưới 200ms, thẻ nhấc 2px khi rê chuột, tắt dịch chuyển khi người dùng bật giảm chuyển động.
+- Không hiển thị số liệu, nhãn "phổ biến nhất" hay đánh giá không có dữ liệu thật.
+
 ## Môi trường
 
 - Flutter 3.47.3, kèm Dart 3.13.3, hoặc phiên bản mới hơn tương thích.

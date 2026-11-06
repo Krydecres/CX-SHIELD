@@ -147,8 +147,16 @@ void main() {
       expect(AppColors.light.lerp(null, 0.5), AppColors.light);
     });
 
-    test('màu nhấn giữ nguyên ở cả hai giao diện', () {
-      expect(AppColors.dark.accent, AppColors.light.accent);
+    test('nhãn trên nút accent đạt tương phản 4.5:1 ở cả hai giao diện', () {
+      double contrast(Color a, Color b) {
+        final (x, y) = (a.computeLuminance(), b.computeLuminance());
+        return (x > y ? x + .05 : y + .05) / (x > y ? y + .05 : x + .05);
+      }
+
+      expect(contrast(AppColors.light.accent, AppColors.light.onAccent), greaterThanOrEqualTo(4.5));
+      expect(contrast(AppColors.dark.accent, AppColors.dark.onAccent), greaterThanOrEqualTo(4.5));
+      expect(contrast(AppColors.light.textMuted, AppColors.light.surface), greaterThanOrEqualTo(4.5));
+      expect(contrast(AppColors.dark.textMuted, AppColors.dark.surface), greaterThanOrEqualTo(4.5));
       expect(AppColors.dark.background, isNot(AppColors.light.background));
     });
   });

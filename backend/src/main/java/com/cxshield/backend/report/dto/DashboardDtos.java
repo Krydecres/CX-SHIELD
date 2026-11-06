@@ -14,8 +14,8 @@ public final class DashboardDtos {
 	 * Số liệu Google null khi chưa đồng bộ được từ Google.
 	 */
 	public record DashboardResponse(UUID branchId, LocalDate from, LocalDate to, long scanCount, long ratedCount,
-			Double satisfactionRate, long googleRedirectCount, Integer googleReviewCount, Double googleAvgRating,
-			List<WeeklyPoint> weekly) {
+			long satisfiedCount, Double satisfactionRate, long googleRedirectCount, Integer googleReviewCount,
+			Double googleAvgRating, List<WeeklyPoint> weekly) {
 	}
 
 	public record WeeklyPoint(LocalDate weekStart, long scanCount, Double satisfactionRate, long googleRedirectCount,

@@ -29,6 +29,7 @@ class DashboardData {
   const DashboardData({
     required this.scanCount,
     required this.ratedCount,
+    this.satisfiedCount = 0,
     this.satisfactionRate,
     required this.googleRedirectCount,
     this.googleReviewCount,
@@ -39,6 +40,7 @@ class DashboardData {
   factory DashboardData.fromJson(Map<String, dynamic> json) => DashboardData(
         scanCount: json['scanCount'] as int? ?? 0,
         ratedCount: json['ratedCount'] as int? ?? 0,
+        satisfiedCount: json['satisfiedCount'] as int? ?? 0,
         satisfactionRate: (json['satisfactionRate'] as num?)?.toDouble(),
         googleRedirectCount: json['googleRedirectCount'] as int? ?? 0,
         googleReviewCount: json['googleReviewCount'] as int?,
@@ -50,13 +52,29 @@ class DashboardData {
 
   final int scanCount;
   final int ratedCount;
+  final int satisfiedCount;
   final double? satisfactionRate;
   final int googleRedirectCount;
   final int? googleReviewCount;
   final double? googleAvgRating;
   final List<DashboardWeek> weekly;
 
+  /// Các bước của phễu, từ lượt quét tới lượt chuyển sang Google.
+  List<FunnelStep> get funnel => [
+        FunnelStep('Quét mã QR', scanCount),
+        FunnelStep('Chọn sao', ratedCount),
+        FunnelStep('Hài lòng 4–5 sao', satisfiedCount),
+        FunnelStep('Chuyển sang Google', googleRedirectCount),
+      ];
+
   bool get isEmpty => scanCount == 0 && weekly.isEmpty;
+}
+
+class FunnelStep {
+  const FunnelStep(this.label, this.count);
+
+  final String label;
+  final int count;
 }
 
 /// Các khoảng thời gian có sẵn trên bộ lọc D5-01.

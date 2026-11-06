@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/api/api_client.dart';
 import '../../core/session/session_controller.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/admin_page.dart';
 import '../../core/widgets/form_label.dart';
 import '../../core/widgets/notice_banner.dart';
 import 'billing_api.dart';
@@ -124,44 +125,49 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(35, 24, 35, 40),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1115),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextButton.icon(
-              onPressed: () => context.go('/billing/plans'),
-              icon: const Icon(Icons.arrow_back, size: 18),
-              label: const Text('Quay lại bảng giá'),
-            ),
-            Text('Thanh toán', style: theme.textTheme.headlineSmall),
-            const SizedBox(height: 16),
-            if (_loading)
-              const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()))
-            else if (_plan == null || widget.cycle == null || _plan!.priceFor(widget.cycle!) == null)
-              NoticeBanner(message: _error ?? 'Không tìm thấy gói đã chọn.', type: NoticeType.error)
-            else
-              _buildContent(_plan!, widget.cycle!),
-          ],
-        ),
+    return AdminPage(
+      title: _plan == null ? 'Thanh toán gói dịch vụ' : 'Thanh toán gói ${_plan!.name}',
+      subtitle: 'Gói được kích hoạt ngay sau khi VNPAY xác nhận giao dịch.',
+      actions: TextButton.icon(
+        onPressed: () => context.go('/billing/plans'),
+        icon: const Icon(Icons.arrow_back, size: 18),
+        label: const Text('Quay lại bảng giá'),
       ),
+      children: [
+        if (_loading)
+          const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()))
+        else if (_plan == null || widget.cycle == null || _plan!.priceFor(widget.cycle!) == null)
+          NoticeBanner(message: _error ?? 'Không tìm thấy gói đã chọn.', type: NoticeType.error)
+        else
+          _buildContent(_plan!, widget.cycle!),
+      ],
     );
   }
 
   Widget _buildContent(BillingPlan plan, BillingCycle cycle) {
     return Form(
       key: _formKey,
-      child: Wrap(
-        spacing: 20,
-        runSpacing: 20,
-        crossAxisAlignment: WrapCrossAlignment.start,
-        children: [
-          SizedBox(width: 640, child: _buildInvoiceCard()),
-          SizedBox(width: 400, child: _buildSummary(plan, cycle)),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 860) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildSummary(plan, cycle),
+                const SizedBox(height: AppSpace.lg),
+                _buildInvoiceCard(),
+              ],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(flex: 3, child: _buildInvoiceCard()),
+              const SizedBox(width: AppSpace.xl),
+              Expanded(flex: 2, child: _buildSummary(plan, cycle)),
+            ],
+          );
+        },
       ),
     );
   }
@@ -169,9 +175,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Widget _buildInvoiceCard() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpace.xl),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text('Phương thức thanh toán', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
@@ -217,9 +223,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final vat = vatOf(price);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpace.xl),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text('Tóm tắt đơn hàng', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
@@ -264,7 +270,11 @@ class _SummaryRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [Text(label, style: style), Text(value, style: style)],
+        children: [
+          Flexible(child: Text(label, style: style)),
+          const SizedBox(width: AppSpace.md),
+          Text(value, style: style),
+        ],
       ),
     );
   }

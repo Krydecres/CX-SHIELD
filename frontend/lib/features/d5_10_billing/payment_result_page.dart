@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/session/session_controller.dart';
+import '../../core/widgets/admin_page.dart';
 import '../../core/widgets/notice_banner.dart';
 import 'billing_api.dart';
 import 'billing_models.dart';
@@ -62,41 +63,33 @@ class _PaymentResultPageState extends State<PaymentResultPage> {
   @override
   Widget build(BuildContext context) {
     final result = _result;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(35, 24, 35, 40),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 640),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return AdminPage(
+      title: 'Kết quả thanh toán',
+      children: [
+        if (_error != null)
+          NoticeBanner(message: _error!, type: NoticeType.error)
+        else if (result == null)
+          const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()))
+        else
+          NoticeBanner(
+            title: 'Mã giao dịch ${result.transactionCode} · ${formatMoney(result.amount)}',
+            message: result.message,
+            type: switch (result.state) {
+              PaymentState.success => NoticeType.success,
+              PaymentState.pending => NoticeType.info,
+              PaymentState.failed => NoticeType.error,
+            },
+          ),
+        const SizedBox(height: AppSpace.lg),
+        Wrap(
+          spacing: AppSpace.md,
+          runSpacing: AppSpace.sm,
           children: [
-            Text('Kết quả thanh toán', style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 16),
-            if (_error != null)
-              NoticeBanner(message: _error!, type: NoticeType.error)
-            else if (result == null)
-              const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()))
-            else ...[
-              NoticeBanner(
-                title: 'Mã giao dịch ${result.transactionCode} · ${formatMoney(result.amount)}',
-                message: result.message,
-                type: switch (result.state) {
-                  PaymentState.success => NoticeType.success,
-                  PaymentState.pending => NoticeType.info,
-                  PaymentState.failed => NoticeType.error,
-                },
-              ),
-            ],
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 12,
-              children: [
-                FilledButton(onPressed: () => context.go('/dashboard'), child: const Text('Về Tổng quan')),
-                OutlinedButton(onPressed: () => context.go('/billing/plans'), child: const Text('Xem bảng giá')),
-              ],
-            ),
+            FilledButton(onPressed: () => context.go('/dashboard'), child: const Text('Mở trang Tổng quan')),
+            OutlinedButton(onPressed: () => context.go('/billing/plans'), child: const Text('Xem bảng giá')),
           ],
         ),
-      ),
+      ],
     );
   }
 }

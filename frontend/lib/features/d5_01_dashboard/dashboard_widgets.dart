@@ -20,9 +20,9 @@ class MetricCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: theme.textTheme.bodySmall?.copyWith(color: context.colors.textSecondary)),
+            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodySmall),
             const SizedBox(height: 8),
-            Text(value, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+            Text(value, style: theme.textTheme.headlineSmall),
             if (note != null) ...[
               const SizedBox(height: 4),
               Text(note!, style: theme.textTheme.bodySmall?.copyWith(color: context.colors.textMuted)),
@@ -30,6 +30,53 @@ class MetricCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Phễu chuyển đổi: mỗi bước một thanh, độ dài theo tỷ lệ so với lượt quét.
+class FunnelChart extends StatelessWidget {
+  const FunnelChart({super.key, required this.steps});
+
+  final List<FunnelStep> steps;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = steps.isEmpty ? 0 : steps.first.count;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final step in steps)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(child: Text(step.label, overflow: TextOverflow.ellipsis)),
+                    Text(
+                      '${formatCount(step.count)} · ${formatPercent(total == 0 ? null : step.count * 100 / total)}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    key: ValueKey('funnel-${step.label}'),
+                    value: total == 0 ? 0 : step.count / total,
+                    minHeight: 10,
+                    backgroundColor: context.colors.secondarySoft,
+                    color: context.colors.secondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
@@ -85,9 +132,16 @@ class WeeklyTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(constraints: BoxConstraints(minWidth: constraints.maxWidth), child: _table()),
+      ),
+    );
+  }
+
+  Widget _table() {
+    return DataTable(
         columns: const [
           DataColumn(label: Text('Tuần từ')),
           DataColumn(label: Text('Lượt quét'), numeric: true),
@@ -107,7 +161,6 @@ class WeeklyTable extends StatelessWidget {
               DataCell(Text(formatRating(week.googleAvgRating))),
             ]),
         ],
-      ),
     );
   }
 }

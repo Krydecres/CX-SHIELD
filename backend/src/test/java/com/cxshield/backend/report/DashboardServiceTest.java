@@ -65,6 +65,7 @@ class DashboardServiceTest {
 
 		assertThat(response.scanCount()).isEqualTo(10);
 		assertThat(response.ratedCount()).isEqualTo(8);
+		assertThat(response.satisfiedCount()).isEqualTo(6);
 		assertThat(response.satisfactionRate()).isEqualTo(75.0);
 		assertThat(response.googleRedirectCount()).isEqualTo(5);
 		assertThat(response.weekly()).extracting(WeeklyPoint::weekStart).containsExactly(WEEK_1, WEEK_2);

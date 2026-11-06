@@ -12,6 +12,7 @@ void main() {
   const json = {
     'scanCount': 1248,
     'ratedCount': 1000,
+    'satisfiedCount': 825,
     'satisfactionRate': 82.5,
     'googleRedirectCount': 684,
     'googleReviewCount': 1032,
@@ -112,6 +113,22 @@ void main() {
       expect(find.text('Lượt quét QR'), findsOneWidget);
       expect(find.text('1.248'), findsOneWidget);
       expect(find.text('Ghi chú'), findsOneWidget);
+    });
+
+    testWidgets('phễu hiện số lượt và tỷ lệ so với lượt quét', (tester) async {
+      await tester.pumpWidget(wrap(FunnelChart(steps: DashboardData.fromJson(json).funnel)));
+
+      expect(find.text('Quét mã QR'), findsOneWidget);
+      expect(find.text('1.248 · 100%'), findsOneWidget);
+      expect(find.text('684 · 54,8%'), findsOneWidget);
+      final bar = tester.widget<LinearProgressIndicator>(find.byKey(const ValueKey('funnel-Chuyển sang Google')));
+      expect(bar.value, closeTo(684 / 1248, 0.001));
+    });
+
+    testWidgets('phễu không lỗi khi chưa có lượt quét', (tester) async {
+      await tester.pumpWidget(wrap(const FunnelChart(steps: [FunnelStep('Quét mã QR', 0)])));
+
+      expect(find.text('0 · —'), findsOneWidget);
     });
 
     testWidgets('cột biểu đồ theo tỷ lệ lượt quét', (tester) async {
