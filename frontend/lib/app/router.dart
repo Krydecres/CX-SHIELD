@@ -8,6 +8,7 @@ import '../features/d3_00_admin_shell/coming_soon_page.dart';
 import '../features/d3_01_auth/auth_page.dart';
 import '../features/d3_02_onboarding/onboarding_page.dart';
 import '../features/d3_05_google_place/google_place_page.dart';
+import '../features/d4_01_alert_channels/alert_channels_page.dart';
 import '../features/d5_01_dashboard/dashboard_page.dart';
 import '../screens/m1_01_rating_screen.dart';
 import 'splash_page.dart';
@@ -17,6 +18,10 @@ const _login = '/login';
 const _onboarding = '/onboarding';
 const _dashboard = '/dashboard';
 const _googlePlace = '/funnel/google-place';
+const _alertChannels = '/alerts/channels';
+
+/// Các mục menu đã có màn thật; mục còn lại hiện trang "Sắp ra mắt".
+const _builtPages = {_dashboard, _googlePlace, _alertChannels};
 
 /// Điều hướng theo trạng thái phiên:
 /// chưa đăng nhập → D3-01; đăng nhập nhưng chưa có cơ sở → D3-02; đã có cơ sở → khung admin (mặc định D5-01).
@@ -82,7 +87,8 @@ GoRouter createRouter(SessionController session) {
               isOnboardingStep: state.uri.queryParameters['step'] == 'onboarding',
             ),
           ),
-          for (final item in adminMenu.where((i) => i.path != _dashboard && i.path != _googlePlace))
+          GoRoute(path: _alertChannels, builder: (context, state) => AlertChannelsPage(session: session)),
+          for (final item in adminMenu.where((i) => !_builtPages.contains(i.path)))
             GoRoute(path: item.path, builder: (context, state) => ComingSoonPage(item: item)),
         ],
       ),

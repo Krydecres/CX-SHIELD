@@ -17,6 +17,7 @@ const adminMenu = [
   AdminMenuItem(label: 'Chi nhánh', path: '/branches', icon: Icons.store_outlined, screenCode: 'D3-03'),
   AdminMenuItem(label: 'Nhân sự & phân quyền', path: '/staff', icon: Icons.groups_outlined, screenCode: 'D3-04'),
   AdminMenuItem(label: 'Cài đặt phễu', path: '/funnel/google-place', icon: Icons.filter_alt_outlined, screenCode: 'D3-05'),
+  AdminMenuItem(label: 'Kênh cảnh báo', path: '/alerts/channels', icon: Icons.notifications_active_outlined, screenCode: 'D4-01'),
   AdminMenuItem(label: 'Ấn phẩm QR / NFC', path: '/print-materials', icon: Icons.qr_code_2_outlined, screenCode: 'D3-09'),
   AdminMenuItem(label: 'Khuyến mãi & quà', path: '/promotions', icon: Icons.card_giftcard_outlined),
   AdminMenuItem(label: 'Thành viên', path: '/members', icon: Icons.loyalty_outlined),
