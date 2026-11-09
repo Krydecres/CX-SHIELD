@@ -4,6 +4,7 @@ import '../core/models/rate_result_model.dart';
 import '../core/models/survey_init_model.dart';
 import '../core/services/survey_api_service.dart';
 import '../core/services/voice_recognition_service.dart';
+import 'm1_01_rating_screen.dart';
 import 'm1_05_urgent_call_screen.dart';
 import 'm1_06_thank_you_screen.dart';
 
@@ -43,13 +44,13 @@ class _M104FeedbackScreenState extends State<M104FeedbackScreen> {
   // Regex kiểm tra số điện thoại Việt Nam chuẩn (10 chữ số, đầu 03, 05, 07, 08, 09 hoặc +84)
   static final RegExp _vnPhoneRegex = RegExp(r'^(0|\+84)(3|5|7|8|9)[0-9]{8}$');
 
-  // Danh sách chủ đề góp ý gợi ý (Feedback Topics)
-  final List<String> _topics = const [
-    'Món ăn / Đồ uống',
-    'Thái độ phục vụ',
-    'Thời gian chờ đợi',
-    'Không gian & Vệ sinh',
-    'Giá cả & Hóa đơn',
+  // Danh sách chủ đề góp ý gợi ý (Feedback Topics - E1.3)
+  List<Map<String, dynamic>> _topics = const [
+    {'id': 'e1eebc99-9c0b-4ef8-bb6d-6bb9bd380001', 'name': 'Món ăn / Đồ uống'},
+    {'id': 'e1eebc99-9c0b-4ef8-bb6d-6bb9bd380002', 'name': 'Thái độ phục vụ'},
+    {'id': 'e1eebc99-9c0b-4ef8-bb6d-6bb9bd380003', 'name': 'Thời gian chờ đợi'},
+    {'id': 'e1eebc99-9c0b-4ef8-bb6d-6bb9bd380004', 'name': 'Không gian & Vệ sinh'},
+    {'id': 'e1eebc99-9c0b-4ef8-bb6d-6bb9bd380005', 'name': 'Giá cả & Hóa đơn'},
   ];
   final Set<String> _selectedTopics = {};
 
@@ -58,6 +59,28 @@ class _M104FeedbackScreenState extends State<M104FeedbackScreen> {
     super.initState();
     _apiService = widget.apiService ?? SurveyApiService();
     _voiceService = widget.voiceService ?? VoiceRecognitionService();
+    _loadTopics();
+  }
+
+  Future<void> _loadTopics() async {
+    final loaded = await _apiService.getFeedbackTopics();
+    if (mounted && loaded.isNotEmpty) {
+      setState(() {
+        _topics = loaded;
+      });
+    }
+  }
+
+  void _handleBack() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => M101RatingScreen(qrCode: widget.surveyData.qrCode),
+        ),
+      );
+    }
   }
 
   @override
@@ -130,13 +153,23 @@ class _M104FeedbackScreenState extends State<M104FeedbackScreen> {
     final comment = _commentController.text.trim();
     final phone = _phoneController.text.trim();
 
-    // Gửi dữ liệu lưu vào bảng feedbacks và kích hoạt sự kiện E2.2
+    final selectedIds = <String>[];
+    for (final t in _topics) {
+      final name = t['name']?.toString() ?? '';
+      final id = t['id']?.toString() ?? '';
+      if (_selectedTopics.contains(name) && id.isNotEmpty) {
+        selectedIds.add(id);
+      }
+    }
+
+    // Gửi dữ liệu lưu vào bảng feedbacks, feedback_topic_links và kích hoạt sự kiện E2.2
     await _apiService.submitFeedback(
       responseId: widget.rateResult.responseId,
       commentText: comment,
       customerPhone: phone.isNotEmpty ? phone : null,
       consentToContact: _consentToContact,
       isUrgentCallback: widget.rateResult.allowUrgentCall,
+      topicIds: selectedIds.isNotEmpty ? selectedIds : null,
     );
 
     if (!mounted) return;
@@ -182,17 +215,29 @@ class _M104FeedbackScreenState extends State<M104FeedbackScreen> {
   Widget build(BuildContext context) {
     final stars = widget.rateResult.starRating;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
-      appBar: AppBar(
-        title: const Text(
-          'M1-04: Góp ý riêng cho cơ sở',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          _handleBack();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF9FAFB),
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: _handleBack,
+            tooltip: 'Quay lại khảo sát',
+          ),
+          title: const Text(
+            'M1-04: Góp ý riêng cho cơ sở',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.white,
+          elevation: 0.5,
         ),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -299,11 +344,12 @@ class _M104FeedbackScreenState extends State<M104FeedbackScreen> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: _topics.map((topic) {
-                        final isSelected = _selectedTopics.contains(topic);
+                      children: _topics.map((topicItem) {
+                        final topicName = topicItem['name']?.toString() ?? '';
+                        final isSelected = _selectedTopics.contains(topicName);
                         return FilterChip(
                           label: Text(
-                            topic,
+                            topicName,
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -322,9 +368,9 @@ class _M104FeedbackScreenState extends State<M104FeedbackScreen> {
                           onSelected: (selected) {
                             setState(() {
                               if (selected) {
-                                _selectedTopics.add(topic);
+                                _selectedTopics.add(topicName);
                               } else {
-                                _selectedTopics.remove(topic);
+                                _selectedTopics.remove(topicName);
                               }
                             });
                           },
@@ -574,6 +620,21 @@ class _M104FeedbackScreenState extends State<M104FeedbackScreen> {
                               ),
                             ),
                           ),
+                          const SizedBox(height: 8),
+                          const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.shield_outlined, size: 14, color: Color(0xFF9CA3AF)),
+                              SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  'Bảo vệ bởi reCAPTCHA ẩn • Tuân thủ chính sách Google Review',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -584,6 +645,7 @@ class _M104FeedbackScreenState extends State<M104FeedbackScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

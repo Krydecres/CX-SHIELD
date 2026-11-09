@@ -4,10 +4,12 @@ import com.cxshield.backend.dto.FeedbackRequestDto;
 import com.cxshield.backend.dto.FeedbackResponseDto;
 import com.cxshield.backend.entity.Feedback;
 import com.cxshield.backend.entity.FeedbackTopic;
+import com.cxshield.backend.entity.FeedbackTopicLink;
 import com.cxshield.backend.entity.SurveyResponse;
 import com.cxshield.backend.entity.SurveySession;
 import com.cxshield.backend.event.FeedbackCreatedEvent;
 import com.cxshield.backend.repository.FeedbackRepository;
+import com.cxshield.backend.repository.FeedbackTopicLinkRepository;
 import com.cxshield.backend.repository.FeedbackTopicRepository;
 import com.cxshield.backend.repository.SurveyResponseRepository;
 import com.cxshield.backend.repository.SurveySessionRepository;
@@ -17,7 +19,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -31,17 +35,20 @@ public class FeedbackServiceImpl implements FeedbackService {
 
     private final FeedbackRepository feedbackRepository;
     private final FeedbackTopicRepository feedbackTopicRepository;
+    private final FeedbackTopicLinkRepository feedbackTopicLinkRepository;
     private final SurveyResponseRepository surveyResponseRepository;
     private final SurveySessionRepository surveySessionRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     public FeedbackServiceImpl(FeedbackRepository feedbackRepository,
                                FeedbackTopicRepository feedbackTopicRepository,
+                               FeedbackTopicLinkRepository feedbackTopicLinkRepository,
                                SurveyResponseRepository surveyResponseRepository,
                                SurveySessionRepository surveySessionRepository,
                                ApplicationEventPublisher eventPublisher) {
         this.feedbackRepository = feedbackRepository;
         this.feedbackTopicRepository = feedbackTopicRepository;
+        this.feedbackTopicLinkRepository = feedbackTopicLinkRepository;
         this.surveyResponseRepository = surveyResponseRepository;
         this.surveySessionRepository = surveySessionRepository;
         this.eventPublisher = eventPublisher;
@@ -106,10 +113,31 @@ public class FeedbackServiceImpl implements FeedbackService {
 
         feedbackRepository.save(feedback);
 
+        // 6. Lưu liên kết chủ đề góp ý (feedback_topic_links)
+        List<UUID> savedTopicIds = new ArrayList<>();
+        List<String> savedTopicNames = new ArrayList<>();
+        if (dto.getTopicIds() != null && !dto.getTopicIds().isEmpty()) {
+            for (UUID topicId : dto.getTopicIds()) {
+                FeedbackTopicLink link = new FeedbackTopicLink(
+                        UUID.randomUUID(),
+                        feedback.getId(),
+                        null,
+                        topicId,
+                        "CUSTOMER_SELECT",
+                        BigDecimal.ONE,
+                        false,
+                        Instant.now()
+                );
+                feedbackTopicLinkRepository.save(link);
+                savedTopicIds.add(topicId);
+                feedbackTopicRepository.findById(topicId).ifPresent(t -> savedTopicNames.add(t.getName()));
+            }
+        }
+
         // Tuân thủ quy ước: KHÔNG ghi SĐT và nội dung ra log, chỉ log ID
         log.info("Đã lưu thành công góp ý nội bộ ID: {} cho Response ID: {}", feedback.getId(), dto.getResponseId());
 
-        // 6. Phát sự kiện để E2.2 gửi cảnh báo (Telegram / Zalo / Email)
+        // 7. Phát sự kiện để E2.2 gửi cảnh báo (Telegram / Zalo / Email)
         eventPublisher.publishEvent(new FeedbackCreatedEvent(
                 feedback.getId(),
                 dto.getResponseId(),
@@ -119,8 +147,8 @@ public class FeedbackServiceImpl implements FeedbackService {
                 phone != null
         ));
 
-        // 7. Trả về kết quả điều hướng sang màn hình cảm ơn M1-06
-        return new FeedbackResponseDto(
+        // 8. Trả về kết quả điều hướng sang màn hình cảm ơn M1-06 kèm danh sách chủ đề đã gắn
+        FeedbackResponseDto responseDto = new FeedbackResponseDto(
                 feedback.getId(),
                 feedback.getResponseId(),
                 feedback.getStatus(),
@@ -128,6 +156,9 @@ public class FeedbackServiceImpl implements FeedbackService {
                 "Góp ý của bạn đã được gửi trực tiếp tới Ban Quản lý. Chúng tôi xin chân thành cảm ơn!",
                 feedback.getSubmittedAt()
         );
+        responseDto.setTopicIds(savedTopicIds);
+        responseDto.setTopicNames(savedTopicNames);
+        return responseDto;
     }
 
     @Override

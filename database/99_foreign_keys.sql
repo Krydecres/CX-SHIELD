@@ -36,3 +36,18 @@ ALTER TABLE feedbacks
     ADD CONSTRAINT fk_feedbacks_response
     FOREIGN KEY (response_id) REFERENCES survey_responses(id) ON DELETE CASCADE;
 
+-- Liên kết feedback_topics -> businesses [E1.3]
+ALTER TABLE feedback_topics
+    ADD CONSTRAINT fk_feedback_topics_business
+    FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
+
+-- Liên kết feedback_topic_links -> feedbacks & feedback_topics [E1.3]
+ALTER TABLE feedback_topic_links
+    ADD CONSTRAINT fk_topic_links_feedback
+    FOREIGN KEY (feedback_id) REFERENCES feedbacks(id) ON DELETE CASCADE;
+
+ALTER TABLE feedback_topic_links
+    ADD CONSTRAINT fk_topic_links_topic
+    FOREIGN KEY (topic_id) REFERENCES feedback_topics(id) ON DELETE CASCADE;
+
+
