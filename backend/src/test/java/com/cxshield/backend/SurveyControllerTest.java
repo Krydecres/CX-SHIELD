@@ -153,6 +153,14 @@ class SurveyControllerTest {
     }
 
     @Test
+    @DisplayName("E1.4: Gọi bypass với responseId rỗng phải ném ngoại lệ")
+    void testRecordPublicBypassWithNullResponseIdThrows() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            surveyController.recordPublicBypass(new PublicBypassRequestDto(null));
+        });
+    }
+
+    @Test
     @DisplayName("E1.1: Đánh giá sao không hợp lệ (<1 hoặc >5) phải ném ngoại lệ")
     void testInvalidRating() {
         SurveyInitResponseDto init = surveyService.getOrInitSession("MC-B04", "127.0.0.1", "Mobile Chrome");
