@@ -2,11 +2,7 @@ package com.cxshield.backend;
 
 import com.cxshield.backend.common.ApiResponse;
 import com.cxshield.backend.controller.SurveyController;
-import com.cxshield.backend.dto.PublicBypassRequestDto;
-import com.cxshield.backend.dto.PublicBypassResponseDto;
-import com.cxshield.backend.dto.RateRequestDto;
-import com.cxshield.backend.dto.RateResultDto;
-import com.cxshield.backend.dto.SurveyInitResponseDto;
+import com.cxshield.backend.dto.*;
 import com.cxshield.backend.entity.SurveyResponse;
 import com.cxshield.backend.repository.BranchRepository;
 import com.cxshield.backend.repository.BusinessRepository;
@@ -156,6 +152,61 @@ class SurveyControllerTest {
         assertTrue(saved.get().isPublicBypass());
         assertNotNull(saved.get().getRedirectClickedAt());
         assertNotNull(saved.get().getReviewPlatformId());
+    }
+
+    @Test
+    @DisplayName("E1.2: Đánh giá 4 sao trả về màn M1-02, kèm link Google Maps và danh sách từ khóa gợi ý")
+    void testSubmitRatingFourStarsReturnsGoogleInfoAndKeywords() {
+        SurveyInitResponseDto init = surveyService.getOrInitSession("MC-B04", "127.0.0.1", "Mobile Chrome");
+        RateRequestDto request = new RateRequestDto(init.getSessionId(), 4);
+        ApiResponse<RateResultDto> response = surveyController.submitRating(request);
+
+        assertTrue(response.isSuccess());
+        RateResultDto result = response.getData();
+        assertEquals(4, result.getStarRating());
+        assertEquals("POSITIVE", result.getSentimentGroup());
+        assertEquals("M1-02", result.getTargetScreen());
+        assertNotNull(result.getReviewDirectUrl());
+        assertTrue(result.getReviewDirectUrl().contains("writereview"));
+        assertNotNull(result.getPlaceName());
+        assertFalse(result.getSuggestedKeywords().isEmpty());
+    }
+
+    @Test
+    @DisplayName("E1.2: Ghi nhận lượt bấm chuyển tiếp sang Google Maps (redirect_clicked_at) và trả về link chuẩn Place ID")
+    void testRecordGoogleRedirectSuccess() {
+        // 1. Quét QR và đánh giá 5 sao
+        SurveyInitResponseDto init = surveyService.getOrInitSession("MC-B04", "127.0.0.1", "Mobile Chrome");
+        RateResultDto rateResult = surveyController.submitRating(new RateRequestDto(init.getSessionId(), 5)).getData();
+        UUID responseId = rateResult.getResponseId();
+
+        // 2. Bấm chuyển tiếp sang Google Maps (E1.2 redirect)
+        GoogleRedirectRequestDto redirectDto = new GoogleRedirectRequestDto(responseId);
+        ApiResponse<GoogleRedirectResponseDto> redirectResponse = surveyController.recordGoogleRedirect(redirectDto);
+
+        assertTrue(redirectResponse.isSuccess());
+        GoogleRedirectResponseDto data = redirectResponse.getData();
+        assertNotNull(data);
+        assertEquals(responseId, data.responseId());
+        assertNotNull(data.redirectClickedAt());
+        assertNotNull(data.reviewPlatformId());
+        assertEquals("Google Maps", data.platformName());
+        assertTrue(data.reviewDirectUrl().contains("writereview"));
+        assertNotNull(data.placeName());
+
+        // Kiểm tra trong CSDL survey_responses
+        Optional<SurveyResponse> saved = surveyResponseRepository.findById(responseId);
+        assertTrue(saved.isPresent());
+        assertNotNull(saved.get().getRedirectClickedAt());
+        assertEquals(data.reviewPlatformId(), saved.get().getReviewPlatformId());
+    }
+
+    @Test
+    @DisplayName("E1.2: Ghi nhận chuyển tiếp với Response ID null phải ném ngoại lệ")
+    void testRecordGoogleRedirectNullResponseIdThrows() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            surveyController.recordGoogleRedirect(new GoogleRedirectRequestDto(null));
+        });
     }
 
     @Test

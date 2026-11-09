@@ -1,5 +1,7 @@
 package com.cxshield.backend.service;
 
+import com.cxshield.backend.dto.GoogleRedirectRequestDto;
+import com.cxshield.backend.dto.GoogleRedirectResponseDto;
 import com.cxshield.backend.dto.PublicBypassRequestDto;
 import com.cxshield.backend.dto.PublicBypassResponseDto;
 import com.cxshield.backend.dto.RateRequestDto;
@@ -21,6 +23,12 @@ public interface SurveyService {
      * 1-3 sao -> M1-04 (Góp ý nội bộ), riêng 1 sao hỗ trợ M1-05 (Hotline khẩn)
      */
     RateResultDto submitRating(RateRequestDto requestDto);
+
+    /**
+     * E1.2: Ghi nhận lượt bấm chuyển tiếp sang Google Maps (redirect_clicked_at) cho khách 4-5 sao
+     * Trả về link viết đánh giá Google của cơ sở (tạo từ Place ID)
+     */
+    GoogleRedirectResponseDto recordGoogleRedirect(GoogleRedirectRequestDto requestDto);
 
     /**
      * E1.4: Ghi nhận lối đi đánh giá công khai (Chống review gating)

@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import '../core/models/rate_result_model.dart';
 import '../core/models/survey_init_model.dart';
+import '../core/services/survey_api_service.dart';
 import 'm1_01_rating_screen.dart';
 
 /// Màn hình M1-02: Phân luồng khách hài lòng (4-5 sao) sang Google Maps + Câu gợi ý tự copy
-/// User story 2 [E1.2] & [E4.3]: Áp dụng từ khóa SEO động từ cấu hình cơ sở
+/// User story 2 [E1.2] & [E4.3]: Áp dụng từ khóa SEO động, tự copy gợi ý, mở Google Maps, ghi nhận redirect_clicked_at
 class M102GoogleReviewScreen extends StatefulWidget {
   final SurveyInitModel surveyData;
   final RateResultModel rateResult;
+  final SurveyApiService? apiService;
 
   const M102GoogleReviewScreen({
     super.key,
     required this.surveyData,
     required this.rateResult,
+    this.apiService,
   });
 
   @override
@@ -24,11 +29,12 @@ class _M102GoogleReviewScreenState extends State<M102GoogleReviewScreen> {
   bool _isCopied = false;
   late final List<String> _availableKeywords;
   final Set<String> _selectedKeywords = {};
+  late final SurveyApiService _apiService = widget.apiService ?? SurveyApiService();
 
   @override
   void initState() {
     super.initState();
-    // Lấy từ khóa động từ RateResult hoặc fallback bộ từ khóa chuẩn
+    // Lấy từ khóa động từ RateResult (cấu hình D3-07) hoặc fallback bộ từ khóa chuẩn ngành
     if (widget.rateResult.suggestedKeywords.isNotEmpty) {
       _availableKeywords = List.from(widget.rateResult.suggestedKeywords);
     } else {
@@ -46,6 +52,7 @@ class _M102GoogleReviewScreenState extends State<M102GoogleReviewScreen> {
     }
   }
 
+  /// Sinh câu gợi ý tích cực dựa trên bộ từ khóa đã chọn
   String get _suggestedReview {
     final brand = widget.surveyData.businessName;
     if (_selectedKeywords.isEmpty) {
@@ -55,6 +62,7 @@ class _M102GoogleReviewScreenState extends State<M102GoogleReviewScreen> {
     return 'Trải nghiệm tại $brand rất tuyệt vời! Điểm cộng lớn: $joined. Sẽ quay lại ủng hộ!';
   }
 
+  /// Copy câu gợi ý vào bộ nhớ tạm
   void _copyToClipboard() {
     Clipboard.setData(ClipboardData(text: _suggestedReview));
     setState(() => _isCopied = true);
@@ -67,36 +75,51 @@ class _M102GoogleReviewScreenState extends State<M102GoogleReviewScreen> {
     );
   }
 
-  void _openGoogleReview() {
-    // Tự động copy gợi ý để khách chỉ việc dán
-    Clipboard.setData(ClipboardData(text: _suggestedReview));
-    setState(() => _isCopied = true);
+  /// Mở trang viết đánh giá Google Maps của cơ sở
+  /// Tiêu chí hoàn thành:
+  /// 1. Tự động copy gợi ý vào clipboard
+  /// 2. Ghi nhận lượt bấm chuyển sang Google (redirect_clicked_at)
+  /// 3. Mở link Google Maps tạo từ Place ID (không chọn sẵn sao, không điền sẵn chữ)
+  Future<void> _openGoogleReview() async {
+    // 1. Tự động copy câu gợi ý
+    await Clipboard.setData(ClipboardData(text: _suggestedReview));
+    if (mounted) setState(() => _isCopied = true);
 
-    // Hiển thị dialog thông báo chuyển tiếp Google Maps
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(Icons.check_circle_rounded, color: Color(0xFF059669)),
-            SizedBox(width: 8),
-            Text('Mở Google Maps', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: const Text(
-          'Câu nhận xét đã được tự động sao chép. Bạn chỉ cần nhấn giữ và chọn "Dán" khi cửa sổ đánh giá Google mở ra!',
-          style: TextStyle(fontSize: 14, height: 1.4),
-        ),
-        actions: [
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A)),
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Đã hiểu & Tiếp tục'),
-          ),
-        ],
+    // 2. Ghi nhận lượt bấm chuyển sang Google (redirect_clicked_at)
+    String targetUrl = widget.rateResult.reviewDirectUrl ?? '';
+    try {
+      final serverUrl = await _apiService.recordGoogleRedirect(
+        responseId: widget.rateResult.responseId,
+      );
+      if (serverUrl.isNotEmpty) {
+        targetUrl = serverUrl;
+      }
+    } catch (_) {
+      // Fallback nếu lỗi kết nối
+    }
+
+    if (targetUrl.isEmpty) {
+      targetUrl = 'https://search.google.com/local/writereview?placeid=ChIJ1234567890abcdef';
+    }
+
+    if (!mounted) return;
+
+    // 3. Thông báo phản hồi trực quan
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã sao chép nhận xét! Đang mở trang đánh giá của ${widget.surveyData.businessName}...'),
+        backgroundColor: const Color(0xFF047857),
+        duration: const Duration(seconds: 3),
       ),
     );
+
+    // 4. Mở liên kết đánh giá chính thức
+    final uri = Uri.parse(targetUrl);
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      await launchUrl(uri);
+    }
   }
 
   void _handleBack() {
@@ -114,7 +137,12 @@ class _M102GoogleReviewScreenState extends State<M102GoogleReviewScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: true,
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          _handleBack();
+        }
+      },
       child: Scaffold(
         backgroundColor: const Color(0xFFF9FAFB),
         appBar: AppBar(
@@ -125,6 +153,7 @@ class _M102GoogleReviewScreenState extends State<M102GoogleReviewScreen> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: _handleBack,
+            tooltip: 'Trở lại khảo sát',
           ),
         ),
         body: SafeArea(
@@ -162,7 +191,7 @@ class _M102GoogleReviewScreenState extends State<M102GoogleReviewScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Đánh giá 5 sao của bạn trên Google Maps giúp ${widget.surveyData.businessName} lan tỏa dịch vụ tốt hơn!',
+                      'Đánh giá của bạn trên Google Maps giúp ${widget.surveyData.businessName} lan tỏa dịch vụ tốt hơn!',
                       textAlign: TextAlign.center,
                       style: const TextStyle(fontSize: 14, color: Color(0xFF4B5563), height: 1.4),
                     ),
@@ -201,56 +230,60 @@ class _M102GoogleReviewScreenState extends State<M102GoogleReviewScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Box gợi ý câu đánh giá
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.03),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.auto_awesome, color: Color(0xFFD97706), size: 18),
-                              const SizedBox(width: 6),
-                              const Expanded(
-                                child: Text(
-                                  'Gợi ý đánh giá tự động (Click sao chép):',
-                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
-                                ),
-                              ),
-                              IconButton(
-                                icon: Icon(
-                                  _isCopied ? Icons.check_circle_rounded : Icons.copy_rounded,
-                                  color: _isCopied ? const Color(0xFF059669) : const Color(0xFF1E3A8A),
-                                  size: 20,
-                                ),
-                                onPressed: _copyToClipboard,
-                                tooltip: 'Sao chép gợi ý',
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _suggestedReview,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF374151),
-                              fontStyle: FontStyle.italic,
-                              height: 1.4,
+                    // Box gợi ý câu đánh giá tự động copy
+                    InkWell(
+                      onTap: _copyToClipboard,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE5E7EB)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.03),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.auto_awesome, color: Color(0xFFD97706), size: 18),
+                                const SizedBox(width: 6),
+                                const Expanded(
+                                  child: Text(
+                                    'Gợi ý nhận xét (bấm để sao chép):',
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF374151)),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    _isCopied ? Icons.check_circle_rounded : Icons.copy_rounded,
+                                    color: _isCopied ? const Color(0xFF059669) : const Color(0xFF1E3A8A),
+                                    size: 20,
+                                  ),
+                                  onPressed: _copyToClipboard,
+                                  tooltip: 'Sao chép gợi ý',
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _suggestedReview,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF374151),
+                                fontStyle: FontStyle.italic,
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -274,9 +307,26 @@ class _M102GoogleReviewScreenState extends State<M102GoogleReviewScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 12),
+
+                    // Huy hiệu tuân thủ chính sách Google Review
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.verified_user_outlined, size: 14, color: Color(0xFF6B7280)),
+                        SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            'Tuân thủ chính sách Google: Đánh giá tự nguyện, không can thiệp số sao.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 16),
 
-                    // Nút quay lại khảo sát (đã fix BUG-SCRUM-189-01)
+                    // Nút quay lại khảo sát (đã fix BUG-SCRUM-189-01 an toàn)
                     TextButton(
                       onPressed: _handleBack,
                       child: const Text('← Trở lại khảo sát'),

@@ -129,6 +129,40 @@ class SurveyApiService {
     );
   }
 
+  /// E1.2: Ghi nhận chuyển hướng khách 4-5 sao sang Google Maps (redirect_clicked_at)
+  Future<String> recordGoogleRedirect({required String responseId}) async {
+    const defaultGoogleReviewUrl = 'https://search.google.com/local/writereview?placeid=ChIJ1234567890abcdef';
+    final url = Uri.parse(ApiConstants.googleRedirectEndpoint);
+    final body = json.encode({
+      'responseId': responseId.isNotEmpty ? responseId : '00000000-0000-0000-0000-000000000000',
+    });
+
+    try {
+      final response = await _client.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: body,
+      ).timeout(ApiConstants.timeout);
+
+      if (response.statusCode == 200) {
+        final decoded = json.decode(utf8.decode(response.bodyBytes));
+        if (decoded['success'] == true && decoded['data'] != null) {
+          final reviewUrl = decoded['data']['reviewDirectUrl'] as String?;
+          if (reviewUrl != null && reviewUrl.isNotEmpty) {
+            return reviewUrl;
+          }
+        }
+      }
+    } catch (_) {
+      // Fallback
+    }
+
+    return defaultGoogleReviewUrl;
+  }
+
   /// E1.4: Ghi nhận chuyển hướng đánh giá công khai Google Maps (chống review gating)
   Future<String> recordPublicBypass({required String responseId}) async {
     const defaultGoogleReviewUrl = 'https://search.google.com/local/writereview?placeid=ChIJ1234567890abcdef';

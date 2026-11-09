@@ -15,6 +15,8 @@ public class RateResultDto {
     private String hotline;
     private List<String> suggestedKeywords = new ArrayList<>();
     private boolean publicReviewEnabled = true;
+    private String reviewDirectUrl;
+    private String placeName;
 
     public RateResultDto() {}
 
@@ -38,4 +40,8 @@ public class RateResultDto {
     public void setSuggestedKeywords(List<String> suggestedKeywords) { this.suggestedKeywords = suggestedKeywords; }
     public boolean isPublicReviewEnabled() { return publicReviewEnabled; }
     public void setPublicReviewEnabled(boolean publicReviewEnabled) { this.publicReviewEnabled = publicReviewEnabled; }
+    public String getReviewDirectUrl() { return reviewDirectUrl; }
+    public void setReviewDirectUrl(String reviewDirectUrl) { this.reviewDirectUrl = reviewDirectUrl; }
+    public String getPlaceName() { return placeName; }
+    public void setPlaceName(String placeName) { this.placeName = placeName; }
 }

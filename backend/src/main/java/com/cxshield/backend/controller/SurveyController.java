@@ -1,11 +1,7 @@
 package com.cxshield.backend.controller;
 
 import com.cxshield.backend.common.ApiResponse;
-import com.cxshield.backend.dto.PublicBypassRequestDto;
-import com.cxshield.backend.dto.PublicBypassResponseDto;
-import com.cxshield.backend.dto.RateRequestDto;
-import com.cxshield.backend.dto.RateResultDto;
-import com.cxshield.backend.dto.SurveyInitResponseDto;
+import com.cxshield.backend.dto.*;
 import com.cxshield.backend.entity.SurveySession;
 import com.cxshield.backend.service.SurveyService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,6 +47,16 @@ public class SurveyController {
     public ApiResponse<RateResultDto> submitRating(@RequestBody RateRequestDto requestDto) {
         RateResultDto result = surveyService.submitRating(requestDto);
         return ApiResponse.success("Ghi nhận đánh giá thành công", result);
+    }
+
+    /**
+     * E1.2 - Chuyển tiếp khách hài lòng (4-5 sao) sang Google Maps
+     * Ghi nhận redirect_clicked_at và trả về link viết đánh giá Google của cơ sở (tạo từ Place ID)
+     */
+    @PostMapping("/google-redirect")
+    public ApiResponse<GoogleRedirectResponseDto> recordGoogleRedirect(@RequestBody GoogleRedirectRequestDto requestDto) {
+        GoogleRedirectResponseDto result = surveyService.recordGoogleRedirect(requestDto);
+        return ApiResponse.success("Ghi nhận chuyển hướng đánh giá Google Maps thành công", result);
     }
 
     /**

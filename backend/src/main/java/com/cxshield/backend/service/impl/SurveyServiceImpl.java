@@ -1,10 +1,6 @@
 package com.cxshield.backend.service.impl;
 
-import com.cxshield.backend.dto.PublicBypassRequestDto;
-import com.cxshield.backend.dto.PublicBypassResponseDto;
-import com.cxshield.backend.dto.RateRequestDto;
-import com.cxshield.backend.dto.RateResultDto;
-import com.cxshield.backend.dto.SurveyInitResponseDto;
+import com.cxshield.backend.dto.*;
 import com.cxshield.backend.entity.*;
 import com.cxshield.backend.repository.*;
 import com.cxshield.backend.service.SurveyService;
@@ -180,6 +176,19 @@ public class SurveyServiceImpl implements SurveyService {
         result.setSuggestedKeywords(keywords);
         result.setPublicReviewEnabled(routingRule.isPublicReviewEnabled());
 
+        ReviewPlatform platform = reviewPlatformRepository.findByBranchId(session.getBranchId())
+                .orElseGet(() -> {
+                    ReviewPlatform fallback = new ReviewPlatform();
+                    fallback.setBranchId(session.getBranchId());
+                    fallback.setPlatformName("Google Maps");
+                    fallback.setReviewDirectUrl("https://search.google.com/local/writereview?placeid=ChIJ1234567890abcdef");
+                    fallback.setPlaceName("Maison Coffee & Bistro");
+                    fallback.setPlaceAddress("123 Đường Đồng Khởi, Bến Nghé, Quận 1, TP. Hồ Chí Minh");
+                    return fallback;
+                });
+        result.setReviewDirectUrl(platform.getReviewDirectUrl());
+        result.setPlaceName(platform.getPlaceName());
+
         if (isPositive) {
             result.setTargetScreen("M1-02");
             result.setAllowUrgentCall(false);
@@ -236,6 +245,47 @@ public class SurveyServiceImpl implements SurveyService {
         dto.setMessage("Chuyển hướng đến trang đánh giá Google Maps thành công");
 
         return dto;
+    }
+
+    @Override
+    public GoogleRedirectResponseDto recordGoogleRedirect(GoogleRedirectRequestDto requestDto) {
+        if (requestDto == null || requestDto.responseId() == null) {
+            throw new IllegalArgumentException("Response ID không được để trống");
+        }
+
+        SurveyResponse response = surveyResponseRepository.findById(requestDto.responseId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy kết quả khảo sát"));
+
+        SurveySession session = surveySessionRepository.findById(response.getSessionId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiên khảo sát tương ứng"));
+
+        ReviewPlatform platform = reviewPlatformRepository.findByBranchId(session.getBranchId())
+                .orElseGet(() -> {
+                    ReviewPlatform fallback = new ReviewPlatform();
+                    fallback.setBranchId(session.getBranchId());
+                    fallback.setPlatformName("Google Maps");
+                    fallback.setReviewDirectUrl("https://search.google.com/local/writereview?placeid=ChIJ1234567890abcdef");
+                    fallback.setPlaceName("Maison Coffee & Bistro");
+                    fallback.setPlaceAddress("123 Đường Đồng Khởi, Bến Nghé, Quận 1, TP. Hồ Chí Minh");
+                    return fallback;
+                });
+
+        response.setRedirectClickedAt(Instant.now());
+        response.setReviewPlatformId(platform.getId());
+        response.setUpdatedAt(Instant.now());
+        surveyResponseRepository.save(response);
+
+        log.info("Khách 4-5 sao bấm chuyển tiếp sang Google Maps (Response ID: {})", response.getId());
+
+        return new GoogleRedirectResponseDto(
+                response.getId(),
+                response.getRedirectClickedAt(),
+                platform.getId(),
+                platform.getPlatformName(),
+                platform.getReviewDirectUrl(),
+                platform.getPlaceName(),
+                "Chuyển hướng đến trang viết đánh giá Google Maps thành công"
+        );
     }
 
     @Override
