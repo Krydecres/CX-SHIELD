@@ -8,6 +8,7 @@ import '../features/d3_00_admin_shell/coming_soon_page.dart';
 import '../features/d3_01_auth/auth_page.dart';
 import '../features/d3_02_onboarding/onboarding_page.dart';
 import '../features/d3_05_google_place/google_place_page.dart';
+import '../features/d3_11_print_nfc/d3_11_print_nfc_page.dart';
 import '../features/d5_01_dashboard/dashboard_page.dart';
 import '../screens/m1_01_rating_screen.dart';
 import 'splash_page.dart';
@@ -17,6 +18,7 @@ const _login = '/login';
 const _onboarding = '/onboarding';
 const _dashboard = '/dashboard';
 const _googlePlace = '/funnel/google-place';
+const _printMaterials = '/print-materials';
 
 /// Điều hướng theo trạng thái phiên:
 /// chưa đăng nhập → D3-01; đăng nhập nhưng chưa có cơ sở → D3-02; đã có cơ sở → khung admin (mặc định D5-01).
@@ -82,7 +84,8 @@ GoRouter createRouter(SessionController session) {
               isOnboardingStep: state.uri.queryParameters['step'] == 'onboarding',
             ),
           ),
-          for (final item in adminMenu.where((i) => i.path != _dashboard && i.path != _googlePlace))
+          GoRoute(path: _printMaterials, builder: (context, state) => D311PrintNfcPage(session: session)),
+          for (final item in adminMenu.where((i) => i.path != _dashboard && i.path != _googlePlace && i.path != _printMaterials))
             GoRoute(path: item.path, builder: (context, state) => ComingSoonPage(item: item)),
         ],
       ),
