@@ -38,3 +38,4 @@ public class FeedbackTopicLinkRepository {
         return store.size();
     }
 }
+
