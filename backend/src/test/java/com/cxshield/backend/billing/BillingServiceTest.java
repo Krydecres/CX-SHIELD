@@ -105,6 +105,78 @@ class BillingServiceTest {
 		assertThat(response.planName()).isEqualTo("Nâng cao");
 		assertThat(response.status()).isEqualTo("ACTIVE");
 		assertThat(response.endDate()).isEqualTo(end);
+		assertThat(response.daysRemaining()).isEqualTo(30);
+		assertThat(response.isExpiringSoon()).isFalse();
+		assertThat(response.isOverdue()).isFalse();
+	}
+
+	@Test
+	void subscriptionShowsExpiringSoonWhenWithinSevenDays() {
+		LocalDate end = LocalDate.of(2026, 11, 10);
+		when(billingRepository.findCurrentSubscription(TOKEN, BUSINESS_ID)).thenReturn(Optional.of(new SubscriptionRow(UUID.randomUUID(),
+				PLAN_ID, BillingCycle.MONTHLY, "ACTIVE", LocalDate.of(2026, 10, 10), end, new PlanRef("Nâng cao"))));
+
+		SubscriptionResponse response = service.getSubscription(TOKEN, USER_ID, BUSINESS_ID);
+
+		assertThat(response.daysRemaining()).isEqualTo(4);
+		assertThat(response.isExpiringSoon()).isTrue();
+		assertThat(response.isOverdue()).isFalse();
+	}
+
+	@Test
+	void subscriptionShowsOverdueWhenPastEndDate() {
+		LocalDate end = LocalDate.of(2026, 11, 1);
+		when(billingRepository.findCurrentSubscription(TOKEN, BUSINESS_ID)).thenReturn(Optional.of(new SubscriptionRow(UUID.randomUUID(),
+				PLAN_ID, BillingCycle.MONTHLY, "OVERDUE", LocalDate.of(2026, 10, 1), end, new PlanRef("Nâng cao"))));
+
+		SubscriptionResponse response = service.getSubscription(TOKEN, USER_ID, BUSINESS_ID);
+
+		assertThat(response.daysRemaining()).isEqualTo(-5);
+		assertThat(response.isExpiringSoon()).isFalse();
+		assertThat(response.isOverdue()).isTrue();
+	}
+
+	@Test
+	void updatesAutoRenewSuccessfully() {
+		UUID subId = UUID.randomUUID();
+		when(billingRepository.findCurrentSubscription(TOKEN, BUSINESS_ID)).thenReturn(Optional.of(new SubscriptionRow(subId,
+				PLAN_ID, BillingCycle.MONTHLY, "ACTIVE", LocalDate.of(2026, 11, 1), LocalDate.of(2026, 12, 1), new PlanRef("Nâng cao"))));
+
+		SubscriptionResponse response = service.updateAutoRenew(TOKEN, USER_ID, BUSINESS_ID, true);
+
+		verify(billingRepository).updateSubscriptionAutoRenew(TOKEN, subId, true);
+		assertThat(response.autoRenew()).isTrue();
+	}
+
+	@Test
+	void paymentHistoryReturnsFormattedPayments() {
+		UUID payId = UUID.randomUUID();
+		PaymentRow p = new PaymentRow(payId, BUSINESS_ID, PLAN_ID, BillingCycle.MONTHLY, "CX100", 385000L, "SUCCESS", "00", java.time.OffsetDateTime.now());
+		when(billingRepository.findPaymentsByBusiness(TOKEN, BUSINESS_ID)).thenReturn(List.of(p));
+
+		var history = service.getPaymentHistory(TOKEN, USER_ID, BUSINESS_ID);
+
+		assertThat(history).hasSize(1);
+		assertThat(history.get(0).transactionCode()).isEqualTo("CX100");
+		assertThat(history.get(0).status()).isEqualTo("SUCCESS");
+		assertThat(history.get(0).hasInvoice()).isTrue();
+	}
+
+	@Test
+	void invoicesCanBeExportedAsPdfAndXml() throws Exception {
+		UUID invId = UUID.randomUUID();
+		UUID payId = UUID.randomUUID();
+		var invRow = new com.cxshield.backend.billing.BillingRepository.InvoiceRow(
+				invId, BUSINESS_ID, payId, "HD-CX100", "Công ty ABC", "123 Đường A", "0123456789", "Nguyễn Văn A", "ketoan@abc.vn",
+				350000L, 10.0, 35000L, 385000L, java.time.OffsetDateTime.now());
+		when(billingRepository.findInvoiceById(TOKEN, invId)).thenReturn(Optional.of(invRow));
+
+		byte[] pdfBytes = service.exportInvoicePdf(TOKEN, USER_ID, BUSINESS_ID, invId);
+		assertThat(pdfBytes).isNotEmpty();
+
+		byte[] xmlBytes = service.exportInvoiceXml(TOKEN, USER_ID, BUSINESS_ID, invId);
+		assertThat(xmlBytes).isNotEmpty();
+		assertThat(new String(xmlBytes)).contains("<HDon").contains("</HDon>").contains("0123456789");
 	}
 
 	@Test

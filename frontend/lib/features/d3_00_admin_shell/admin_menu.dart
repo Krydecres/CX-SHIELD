@@ -23,6 +23,7 @@ const adminMenu = [
   AdminMenuItem(label: 'Thành viên', path: '/members', icon: Icons.loyalty_outlined),
   AdminMenuItem(label: 'Chống gian lận', path: '/fraud', icon: Icons.gpp_maybe_outlined, screenCode: 'D3-14'),
   AdminMenuItem(label: 'Gói dịch vụ', path: '/billing/plans', icon: Icons.workspace_premium_outlined, screenCode: 'D5-10'),
+  AdminMenuItem(label: 'Thuê bao & hóa đơn', path: '/billing/subscription', icon: Icons.receipt_long_outlined, screenCode: 'D5-12'),
   AdminMenuItem(label: 'Cài đặt hệ thống', path: '/settings', icon: Icons.settings_outlined),
 ];
 

@@ -33,4 +33,32 @@ class BillingApi {
   Future<PaymentResult> payment(String businessId, String transactionCode) async => PaymentResult.fromJson(
         await _api.get('/businesses/$businessId/payments/$transactionCode') as Map<String, dynamic>,
       );
+
+  Future<Subscription> updateAutoRenew(String businessId, bool autoRenew) async =>
+      Subscription.fromJson(
+        await _api.put('/businesses/$businessId/subscription/auto-renew', {
+          'autoRenew': autoRenew,
+        }) as Map<String, dynamic>,
+      );
+
+  Future<List<PaymentHistoryItem>> payments(String businessId) async {
+    final res = await _api.get('/businesses/$businessId/payments') as List<dynamic>;
+    return res.map((e) => PaymentHistoryItem.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<List<InvoiceItem>> invoices(String businessId) async {
+    final res = await _api.get('/businesses/$businessId/invoices') as List<dynamic>;
+    return res.map((e) => InvoiceItem.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<InvoiceItem> invoice(String businessId, String invoiceId) async =>
+      InvoiceItem.fromJson(
+        await _api.get('/businesses/$businessId/invoices/$invoiceId') as Map<String, dynamic>,
+      );
+
+  String invoicePdfUrl(String businessId, String invoiceId) =>
+      '/api/v1/businesses/$businessId/invoices/$invoiceId/pdf';
+
+  String invoiceXmlUrl(String businessId, String invoiceId) =>
+      '/api/v1/businesses/$businessId/invoices/$invoiceId/xml';
 }

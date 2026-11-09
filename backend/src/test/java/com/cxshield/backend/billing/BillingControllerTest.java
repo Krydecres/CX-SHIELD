@@ -1,5 +1,6 @@
 package com.cxshield.backend.billing;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -67,6 +68,57 @@ class BillingControllerTest {
 		controller.payment(jwt, BUSINESS_ID, "CX1");
 
 		verify(service).getPayment("token", USER_ID, BUSINESS_ID, "CX1");
+	}
+
+	@Test
+	void updateAutoRenewCallsService() {
+		com.cxshield.backend.billing.dto.BillingDtos.AutoRenewRequest req =
+				new com.cxshield.backend.billing.dto.BillingDtos.AutoRenewRequest(true);
+		controller.updateAutoRenew(jwt, BUSINESS_ID, req);
+
+		verify(service).updateAutoRenew("token", USER_ID, BUSINESS_ID, true);
+	}
+
+	@Test
+	void paymentHistoryCallsService() {
+		controller.paymentHistory(jwt, BUSINESS_ID);
+
+		verify(service).getPaymentHistory("token", USER_ID, BUSINESS_ID);
+	}
+
+	@Test
+	void invoicesCallsService() {
+		controller.invoices(jwt, BUSINESS_ID);
+
+		verify(service).getInvoices("token", USER_ID, BUSINESS_ID);
+	}
+
+	@Test
+	void exportInvoicePdfCallsService() throws Exception {
+		UUID invoiceId = UUID.randomUUID();
+		when(service.exportInvoicePdf("token", USER_ID, BUSINESS_ID, invoiceId))
+				.thenReturn("%PDF-1.4 sample".getBytes());
+
+		org.springframework.http.ResponseEntity<byte[]> response =
+				controller.exportInvoicePdf(jwt, BUSINESS_ID, invoiceId);
+
+		assertThat(response.getStatusCode().value()).isEqualTo(200);
+		assertThat(response.getHeaders().getContentType()).isEqualTo(org.springframework.http.MediaType.APPLICATION_PDF);
+		verify(service).exportInvoicePdf("token", USER_ID, BUSINESS_ID, invoiceId);
+	}
+
+	@Test
+	void exportInvoiceXmlCallsService() {
+		UUID invoiceId = UUID.randomUUID();
+		when(service.exportInvoiceXml("token", USER_ID, BUSINESS_ID, invoiceId))
+				.thenReturn("<HDon></HDon>".getBytes());
+
+		org.springframework.http.ResponseEntity<byte[]> response =
+				controller.exportInvoiceXml(jwt, BUSINESS_ID, invoiceId);
+
+		assertThat(response.getStatusCode().value()).isEqualTo(200);
+		assertThat(response.getHeaders().getContentType()).isEqualTo(org.springframework.http.MediaType.APPLICATION_XML);
+		verify(service).exportInvoiceXml("token", USER_ID, BUSINESS_ID, invoiceId);
 	}
 
 }

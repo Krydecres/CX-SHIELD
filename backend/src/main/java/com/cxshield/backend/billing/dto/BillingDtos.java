@@ -23,9 +23,35 @@ public final class BillingDtos {
 
 	/**
 	 * status null nghĩa là cơ sở chưa có gói nào.
+	 * Bổ sung autoRenew, daysRemaining, trialEndDate, graceUntil, isExpiringSoon, isOverdue cho E8.3.
 	 */
 	public record SubscriptionResponse(UUID planId, String planName, BillingCycle billingCycle, String status,
-			LocalDate startDate, LocalDate endDate) {
+			LocalDate startDate, LocalDate endDate, Boolean autoRenew, Integer daysRemaining,
+			LocalDate trialEndDate, LocalDate graceUntil, Boolean isExpiringSoon, Boolean isOverdue) {
+
+		public SubscriptionResponse(UUID planId, String planName, BillingCycle billingCycle, String status,
+				LocalDate startDate, LocalDate endDate) {
+			this(planId, planName, billingCycle, status, startDate, endDate, true, null, null, null, false, false);
+		}
+	}
+
+	public record AutoRenewRequest(@NotNull Boolean autoRenew) {
+	}
+
+	public record PaymentHistoryResponse(UUID id, UUID businessId, UUID planId, String planName,
+			BillingCycle billingCycle, String transactionCode, long amount, String status,
+			String method, String gatewayResponseCode, OffsetDateTime paidAt, OffsetDateTime createdAt,
+			UUID invoiceId, String invoiceNumber) {
+
+		public boolean hasInvoice() {
+			return invoiceId != null || invoiceNumber != null;
+		}
+	}
+
+	public record InvoiceResponse(UUID id, UUID businessId, UUID paymentId, String transactionCode,
+			String invoiceNumber, String companyName, String companyAddress, String taxCode,
+			String buyerName, String billingEmail, long subtotal, double vatRate, long vatAmount,
+			long totalAmount, OffsetDateTime issuedAt, String pdfUrl, String xmlUrl) {
 	}
 
 	public record BillingProfileDto(@Size(max = 20) String taxCode, @Size(max = 200) String companyName,

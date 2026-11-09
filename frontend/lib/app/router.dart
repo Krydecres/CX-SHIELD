@@ -14,6 +14,7 @@ import '../features/d5_10_billing/billing_models.dart';
 import '../features/d5_10_billing/checkout_page.dart';
 import '../features/d5_10_billing/payment_result_page.dart';
 import '../features/d5_10_billing/pricing_page.dart';
+import '../features/d5_10_billing/subscription_page.dart';
 import '../screens/m1_01_rating_screen.dart';
 import 'splash_page.dart';
 
@@ -24,11 +25,12 @@ const _dashboard = '/dashboard';
 const _googlePlace = '/funnel/google-place';
 const _alertChannels = '/alerts/channels';
 const _billingPlans = '/billing/plans';
+const _billingSubscription = '/billing/subscription';
 const _billingCheckout = '$_billingPlans/checkout';
 const _billingResult = '$_billingPlans/result';
 
 /// Các mục menu đã có màn thật; mục còn lại hiện trang "Sắp ra mắt".
-const _builtPages = {_dashboard, _googlePlace, _alertChannels, _billingPlans};
+const _builtPages = {_dashboard, _googlePlace, _alertChannels, _billingPlans, _billingSubscription};
 
 /// Điều hướng theo trạng thái phiên:
 /// chưa đăng nhập → D3-01; đăng nhập nhưng chưa có cơ sở → D3-02; đã có cơ sở → khung admin (mặc định D5-01).
@@ -100,6 +102,7 @@ GoRouter createRouter(SessionController session) {
           ),
           GoRoute(path: _alertChannels, builder: (context, state) => AlertChannelsPage(session: session)),
           GoRoute(path: _billingPlans, builder: (context, state) => PricingPage(session: session)),
+          GoRoute(path: _billingSubscription, builder: (context, state) => SubscriptionPage(session: session)),
           GoRoute(
             path: _billingCheckout,
             builder: (context, state) => CheckoutPage(
