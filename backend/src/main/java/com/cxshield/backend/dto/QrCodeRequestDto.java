@@ -13,3 +13,4 @@ public record QrCodeRequestDto(
 
         String name
 ) {}
+

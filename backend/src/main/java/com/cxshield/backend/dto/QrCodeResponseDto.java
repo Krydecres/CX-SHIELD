@@ -13,3 +13,4 @@ public record QrCodeResponseDto(
         String targetUrl,
         Instant createdAt
 ) {}
+
