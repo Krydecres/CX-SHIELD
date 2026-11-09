@@ -71,11 +71,11 @@ class _M101RatingScreenState extends State<M101RatingScreen> {
 
     if (!mounted) return;
 
-    // Phân luồng điều hướng:
-    // 4–5 sao -> M1-02 (Google Maps)
-    // 1–3 sao -> M1-04 (Form góp ý nội bộ)
-    // 1 sao có thêm nút/liên kết M1-05 (Hotline khẩn cấp)
-    if (stars >= 4) {
+    // Phân luồng điều hướng theo kết quả API (tương thích quy tắc E4.3):
+    // TargetScreen M1-02 -> Google Maps
+    // TargetScreen M1-04 -> Form góp ý nội bộ
+    final targetScreen = result.targetScreen;
+    if (targetScreen == 'M1-02' || (targetScreen.isEmpty && stars >= 4)) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => M102GoogleReviewScreen(

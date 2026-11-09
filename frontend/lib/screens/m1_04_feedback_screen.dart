@@ -4,6 +4,7 @@ import '../core/models/rate_result_model.dart';
 import '../core/models/survey_init_model.dart';
 import '../core/services/survey_api_service.dart';
 import '../core/services/voice_recognition_service.dart';
+import 'm1_01_rating_screen.dart';
 import 'm1_05_urgent_call_screen.dart';
 import 'm1_06_thank_you_screen.dart';
 
@@ -182,17 +183,33 @@ class _M104FeedbackScreenState extends State<M104FeedbackScreen> {
   Widget build(BuildContext context) {
     final stars = widget.rateResult.starRating;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
-      appBar: AppBar(
-        title: const Text(
-          'M1-04: Góp ý riêng cho cơ sở',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+    return PopScope(
+      canPop: true,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF9FAFB),
+        appBar: AppBar(
+          title: const Text(
+            'M1-04: Góp ý riêng cho cơ sở',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.white,
+          elevation: 0.5,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              } else {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (_) => M101RatingScreen(qrCode: widget.surveyData.qrCode),
+                  ),
+                );
+              }
+            },
+          ),
         ),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -581,6 +598,7 @@ class _M104FeedbackScreenState extends State<M104FeedbackScreen> {
                 ),
               ),
             ),
+          ),
           ),
         ),
       ),

@@ -7,6 +7,8 @@ class RateResultModel {
   final bool allowUrgentCall;
   final String message;
   final String hotline;
+  final List<String> suggestedKeywords;
+  final bool publicReviewEnabled;
 
   const RateResultModel({
     required this.responseId,
@@ -17,9 +19,15 @@ class RateResultModel {
     required this.allowUrgentCall,
     required this.message,
     required this.hotline,
+    this.suggestedKeywords = const [],
+    this.publicReviewEnabled = true,
   });
 
   factory RateResultModel.fromJson(Map<String, dynamic> json) {
+    List<String> keywords = [];
+    if (json['suggestedKeywords'] is List) {
+      keywords = (json['suggestedKeywords'] as List).map((e) => e.toString()).toList();
+    }
     return RateResultModel(
       responseId: json['responseId'] as String? ?? '',
       sessionId: json['sessionId'] as String? ?? '',
@@ -29,7 +37,8 @@ class RateResultModel {
       allowUrgentCall: json['allowUrgentCall'] as bool? ?? false,
       message: json['message'] as String? ?? '',
       hotline: json['hotline'] as String? ?? '02838221122',
+      suggestedKeywords: keywords,
+      publicReviewEnabled: json['publicReviewEnabled'] as bool? ?? true,
     );
   }
 }
-
