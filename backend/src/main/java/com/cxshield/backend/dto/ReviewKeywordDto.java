@@ -12,3 +12,4 @@ public record ReviewKeywordDto(
         Instant createdAt,
         Instant updatedAt
 ) {}
+

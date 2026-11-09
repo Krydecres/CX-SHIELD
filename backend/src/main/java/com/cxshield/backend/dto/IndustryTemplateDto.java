@@ -7,3 +7,4 @@ public record IndustryTemplateDto(
         String displayName,
         List<String> keywords
 ) {}
+

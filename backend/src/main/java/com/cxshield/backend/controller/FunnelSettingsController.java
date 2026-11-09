@@ -89,3 +89,4 @@ public class FunnelSettingsController {
         return ResponseEntity.ok(ApiResponse.success(templates));
     }
 }
+

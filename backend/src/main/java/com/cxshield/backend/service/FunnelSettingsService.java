@@ -29,3 +29,4 @@ public interface FunnelSettingsService {
 
     RoutingRule getRoutingRuleEntity(UUID businessId);
 }
+

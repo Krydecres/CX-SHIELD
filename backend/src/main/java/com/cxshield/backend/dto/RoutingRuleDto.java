@@ -12,3 +12,4 @@ public record RoutingRuleDto(
         Instant createdAt,
         Instant updatedAt
 ) {}
+

@@ -4,3 +4,4 @@ public record UpdateKeywordRequestDto(
         String keyword,
         Boolean active
 ) {}
+

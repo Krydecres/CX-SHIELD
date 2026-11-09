@@ -4,3 +4,4 @@ public record CreateKeywordRequestDto(
         String keyword,
         String industry
 ) {}
+

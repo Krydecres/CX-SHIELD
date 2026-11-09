@@ -46,3 +46,4 @@ VALUES
     ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'F&B', 'Đồ uống đa dạng, decor xinh', true),
     ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'F&B', 'Nhạc nhẹ nhàng, thư giãn', true)
 ON CONFLICT DO NOTHING;
+

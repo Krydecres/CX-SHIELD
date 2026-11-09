@@ -5,3 +5,4 @@ public record UpdateRoutingRuleRequestDto(
         Integer satisfiedMaxScore,
         Boolean publicReviewEnabled
 ) {}
+
