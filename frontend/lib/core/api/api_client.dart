@@ -37,6 +37,8 @@ class ApiClient {
 
   Future<dynamic> put(String path, Map<String, dynamic> body) => _send('PUT', path, body);
 
+  Future<dynamic> delete(String path) => _send('DELETE', path);
+
   Future<dynamic> _send(String method, String path, [Map<String, dynamic>? body]) async {
     final token = _accessToken();
     final request = http.Request(method, Uri.parse('$_baseUrl/api/v1$path'))

@@ -76,6 +76,15 @@ class SessionController extends ChangeNotifier {
     notifyListeners();
   }
 
+  @visibleForTesting
+  void applyProfileForTesting(Me loaded, {List<Branch> loadedBranches = const []}) {
+    me = loaded;
+    branches = loadedBranches;
+    selectedBranch = loadedBranches.firstOrNull;
+    status = SessionStatus.ready;
+    notifyListeners();
+  }
+
   Future<void> signOut() async {
     await _auth.signOut();
     _clear();

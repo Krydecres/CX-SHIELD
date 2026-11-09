@@ -5,25 +5,17 @@ import com.cxshield.backend.dto.PublicBypassResponseDto;
 import com.cxshield.backend.dto.RateRequestDto;
 import com.cxshield.backend.dto.RateResultDto;
 import com.cxshield.backend.dto.SurveyInitResponseDto;
-import com.cxshield.backend.entity.Branch;
-import com.cxshield.backend.entity.Business;
-import com.cxshield.backend.entity.QrCode;
-import com.cxshield.backend.entity.ReviewPlatform;
-import com.cxshield.backend.entity.SurveyResponse;
-import com.cxshield.backend.entity.SurveySession;
-import com.cxshield.backend.repository.BranchRepository;
-import com.cxshield.backend.repository.BusinessRepository;
-import com.cxshield.backend.repository.QrCodeRepository;
-import com.cxshield.backend.repository.ReviewPlatformRepository;
-import com.cxshield.backend.repository.SurveyResponseRepository;
-import com.cxshield.backend.repository.SurveySessionRepository;
+import com.cxshield.backend.entity.*;
+import com.cxshield.backend.repository.*;
 import com.cxshield.backend.service.SurveyService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class SurveyServiceImpl implements SurveyService {
@@ -35,19 +27,25 @@ public class SurveyServiceImpl implements SurveyService {
     private final SurveySessionRepository surveySessionRepository;
     private final SurveyResponseRepository surveyResponseRepository;
     private final ReviewPlatformRepository reviewPlatformRepository;
+    private final RoutingRuleRepository routingRuleRepository;
+    private final ReviewKeywordRepository reviewKeywordRepository;
 
     public SurveyServiceImpl(QrCodeRepository qrCodeRepository,
                              BranchRepository branchRepository,
                              BusinessRepository businessRepository,
                              SurveySessionRepository surveySessionRepository,
                              SurveyResponseRepository surveyResponseRepository,
-                             @org.springframework.beans.factory.annotation.Qualifier("surveyReviewPlatformRepository") ReviewPlatformRepository reviewPlatformRepository) {
+                             @org.springframework.beans.factory.annotation.Qualifier("surveyReviewPlatformRepository") ReviewPlatformRepository reviewPlatformRepository,
+                             RoutingRuleRepository routingRuleRepository,
+                             ReviewKeywordRepository reviewKeywordRepository) {
         this.qrCodeRepository = qrCodeRepository;
         this.branchRepository = branchRepository;
         this.businessRepository = businessRepository;
         this.surveySessionRepository = surveySessionRepository;
         this.surveyResponseRepository = surveyResponseRepository;
         this.reviewPlatformRepository = reviewPlatformRepository;
+        this.routingRuleRepository = routingRuleRepository;
+        this.reviewKeywordRepository = reviewKeywordRepository;
     }
 
     @Override
@@ -58,35 +56,47 @@ public class SurveyServiceImpl implements SurveyService {
         QrCode qrCode = qrCodeRepository.findByCode(qrCodeValue)
                 .orElseGet(() -> {
                     // Nếu khách quét mã chưa có sẵn trong DB, tự động gắn với chi nhánh mẫu để đảm bảo trải nghiệm tức thì (<1s)
-                    UUID defaultBranchId = UUID.fromString("b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22");
-                    QrCode newQr = new QrCode(
-                            UUID.randomUUID(),
-                            defaultBranchId,
-                            qrCodeValue != null ? qrCodeValue : "DEFAULT",
-                            "TABLE",
-                            qrCodeValue != null ? "Vị trí " + qrCodeValue : "Bàn trải nghiệm",
-                            "ACTIVE"
-                    );
-                    return qrCodeRepository.save(newQr);
+                    QrCode fallback = new QrCode();
+                    fallback.setCode(qrCodeValue);
+                    fallback.setBranchId(UUID.fromString("b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22"));
+                    fallback.setName("Bàn 04");
+                    return qrCodeRepository.save(fallback);
                 });
 
-        // 2. Lấy thông tin Chi nhánh & Cơ sở
+        // 2. Tìm chi nhánh tương ứng
         Branch branch = branchRepository.findById(qrCode.getBranchId())
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy chi nhánh cho mã QR này"));
-        Business business = businessRepository.findById(branch.getBusinessId())
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy cơ sở kinh doanh"));
+                .orElseGet(() -> {
+                    Branch fallbackBranch = new Branch();
+                    fallbackBranch.setId(qrCode.getBranchId());
+                    fallbackBranch.setBusinessId(UUID.fromString("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"));
+                    fallbackBranch.setName("Chi nhánh Quận 1 - Đồng Khởi");
+                    fallbackBranch.setAddress("123 Đường Đồng Khởi, Bến Nghé, Quận 1, TP. Hồ Chí Minh");
+                    fallbackBranch.setHotline("02838221122");
+                    return branchRepository.save(fallbackBranch);
+                });
 
-        // 3. Tạo survey_session mới ghi nhận lượt quét
+        // 3. Tìm cơ sở kinh doanh tương ứng
+        Business business = businessRepository.findById(branch.getBusinessId())
+                .orElseGet(() -> {
+                    Business fallbackBiz = new Business();
+                    fallbackBiz.setId(branch.getBusinessId());
+                    fallbackBiz.setBrandName("Maison Coffee");
+                    fallbackBiz.setDisplayName("Maison Coffee & Bistro");
+                    fallbackBiz.setPrimaryColor("#2C1810");
+                    return businessRepository.save(fallbackBiz);
+                });
+
+        // 4. Tạo phiên khảo sát mới trong survey_sessions
         SurveySession session = new SurveySession();
         session.setQrCodeId(qrCode.getId());
         session.setBranchId(branch.getId());
-        session.setTableOrAreaCode(qrCode.getName());
+        session.setStartedAt(Instant.now());
+        session.setStatus("ACTIVE");
         session.setClientIp(clientIp);
         session.setUserAgent(userAgent);
-        session.setStatus("STARTED");
         surveySessionRepository.save(session);
 
-        // 4. Trả về DTO hiển thị cho màn hình M1-01
+        // 5. Trả về DTO khởi tạo cho màn hình M1-01
         SurveyInitResponseDto dto = new SurveyInitResponseDto();
         dto.setSessionId(session.getId());
         dto.setQrCode(qrCode.getCode());
@@ -114,7 +124,16 @@ public class SurveyServiceImpl implements SurveyService {
                 .orElseThrow(() -> new IllegalArgumentException("Phiên khảo sát không tồn tại hoặc đã hết hạn"));
 
         int stars = requestDto.getStarRating();
-        boolean isPositive = stars >= 4;
+
+        // Lấy chi nhánh và cơ sở tương ứng
+        Branch branch = branchRepository.findById(session.getBranchId()).orElse(null);
+        UUID businessId = branch != null ? branch.getBusinessId() : null;
+
+        // E4.3: Đọc quy tắc phân luồng cảm xúc theo cơ sở từ routing_rules
+        RoutingRule routingRule = routingRuleRepository.findByBusinessId(businessId)
+                .orElse(new RoutingRule(businessId, 4, 5, true));
+
+        boolean isPositive = routingRule.isSatisfied(stars);
         String sentimentGroup = isPositive ? "POSITIVE" : "NEGATIVE";
 
         // Cập nhật trạng thái phiên khảo sát
@@ -133,21 +152,33 @@ public class SurveyServiceImpl implements SurveyService {
 
         // Lấy hotline chi nhánh nếu có khiếu nại khẩn
         String hotline = "02838221122";
-        Branch branch = branchRepository.findById(session.getBranchId()).orElse(null);
         if (branch != null && branch.getHotline() != null) {
             hotline = branch.getHotline();
         }
 
-        // Định tuyến theo quy tắc nghiệp vụ:
-        // 4-5 sao -> M1-02 (Google Maps)
-        // 1-3 sao -> M1-04 (Form góp ý nội bộ)
-        // 1 sao -> M1-05 (Có thể liên hệ hotline hoặc yêu cầu quản lý gọi lại ngay)
+        // E4.3: Lấy danh sách từ khóa gợi ý SEO đang kích hoạt cho màn M1-02
+        List<String> keywords = reviewKeywordRepository.findByBusinessIdAndActiveTrue(businessId)
+                .stream()
+                .map(ReviewKeyword::getKeyword)
+                .collect(Collectors.toList());
+
+        if (keywords.isEmpty()) {
+            keywords = List.of(
+                    "Cà phê đậm đà ngon",
+                    "Không gian ấm cúng, view đẹp",
+                    "Nhân viên nhiệt tình, chu đáo",
+                    "Phục vụ nhanh chóng"
+            );
+        }
+
         RateResultDto result = new RateResultDto();
         result.setResponseId(response.getId());
         result.setSessionId(session.getId());
         result.setStarRating(stars);
         result.setSentimentGroup(sentimentGroup);
         result.setHotline(hotline);
+        result.setSuggestedKeywords(keywords);
+        result.setPublicReviewEnabled(routingRule.isPublicReviewEnabled());
 
         if (isPositive) {
             result.setTargetScreen("M1-02");
@@ -170,55 +201,41 @@ public class SurveyServiceImpl implements SurveyService {
             throw new IllegalArgumentException("Response ID không được để trống");
         }
 
-        UUID branchId = UUID.fromString("b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22");
-        SurveyResponse response = surveyResponseRepository.findById(requestDto.getResponseId()).orElse(null);
+        SurveyResponse response = surveyResponseRepository.findById(requestDto.getResponseId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy kết quả khảo sát"));
 
-        if (response != null) {
-            // E1.4: Cập nhật CSDL survey_responses
-            response.setPublicBypass(true);
-            response.setRedirectClickedAt(Instant.now());
-            response.setUpdatedAt(Instant.now());
+        SurveySession session = surveySessionRepository.findById(response.getSessionId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiên khảo sát tương ứng"));
 
-            SurveySession session = surveySessionRepository.findById(response.getSessionId()).orElse(null);
-            if (session != null && session.getBranchId() != null) {
-                branchId = session.getBranchId();
-            }
-
-            // Gắn platform Google Maps
-            ReviewPlatform platform = reviewPlatformRepository.findByBranchId(branchId).orElse(null);
-            if (platform != null) {
-                response.setReviewPlatformId(platform.getId());
-            }
-
-            surveyResponseRepository.save(response);
-            log.info("Khách chọn lối đi đánh giá công khai Google Maps (Response ID: {})", response.getId());
-        }
-
-        // Lấy link đánh giá Google Maps của cơ sở
-        ReviewPlatform platform = reviewPlatformRepository.findByBranchId(branchId)
+        ReviewPlatform platform = reviewPlatformRepository.findByBranchId(session.getBranchId())
                 .orElseGet(() -> {
-                    UUID platformId = UUID.fromString("d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44");
-                    return new ReviewPlatform(
-                            platformId,
-                            UUID.fromString("b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22"),
-                            "Google Maps",
-                            "ChIJ1234567890abcdef",
-                            "https://search.google.com/local/writereview?placeid=ChIJ1234567890abcdef",
-                            "Maison Coffee & Bistro - Đồng Khởi",
-                            "123 Đường Đồng Khởi, Bến Nghé, Quận 1, TP. Hồ Chí Minh"
-                    );
+                    ReviewPlatform fallback = new ReviewPlatform();
+                    fallback.setBranchId(session.getBranchId());
+                    fallback.setPlatformName("Google Maps");
+                    fallback.setReviewDirectUrl("https://search.google.com/local/writereview?placeid=ChIJ1234567890abcdef");
+                    fallback.setPlaceName("Maison Coffee & Bistro");
+                    fallback.setPlaceAddress("123 Đường Đồng Khởi, Bến Nghé, Quận 1, TP. Hồ Chí Minh");
+                    return fallback;
                 });
 
-        return new PublicBypassResponseDto(
-                requestDto.getResponseId(),
-                true,
-                Instant.now(),
-                platform.getId(),
-                platform.getPlatformName(),
-                platform.getReviewDirectUrl(),
-                platform.getPlaceName(),
-                "Chuyển tiếp tới trang đánh giá công khai Google Maps của cơ sở"
-        );
+        response.setPublicBypass(true);
+        response.setRedirectClickedAt(Instant.now());
+        response.setReviewPlatformId(platform.getId());
+        surveyResponseRepository.save(response);
+
+        log.info("Khách chọn lối đi đánh giá công khai Google Maps (Response ID: {})", response.getId());
+
+        PublicBypassResponseDto dto = new PublicBypassResponseDto();
+        dto.setResponseId(response.getId());
+        dto.setPublicBypass(true);
+        dto.setRedirectClickedAt(response.getRedirectClickedAt());
+        dto.setReviewPlatformId(platform.getId());
+        dto.setPlatformName(platform.getPlatformName());
+        dto.setReviewDirectUrl(platform.getReviewDirectUrl());
+        dto.setPlaceName(platform.getPlaceName());
+        dto.setMessage("Chuyển hướng đến trang đánh giá Google Maps thành công");
+
+        return dto;
     }
 
     @Override
