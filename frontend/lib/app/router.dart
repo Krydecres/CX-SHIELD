@@ -8,6 +8,7 @@ import '../features/d3_00_admin_shell/coming_soon_page.dart';
 import '../features/d3_01_auth/auth_page.dart';
 import '../features/d3_02_onboarding/onboarding_page.dart';
 import '../features/d3_05_google_place/google_place_page.dart';
+import '../features/d3_09_qr_studio/d3_09_qr_studio_page.dart';
 import '../features/d3_11_print_nfc/d3_11_print_nfc_page.dart';
 import '../features/d5_01_dashboard/dashboard_page.dart';
 import '../screens/m1_01_rating_screen.dart';
@@ -84,7 +85,16 @@ GoRouter createRouter(SessionController session) {
               isOnboardingStep: state.uri.queryParameters['step'] == 'onboarding',
             ),
           ),
-          GoRoute(path: _printMaterials, builder: (context, state) => D311PrintNfcPage(session: session)),
+          GoRoute(
+            path: _printMaterials,
+            builder: (context, state) {
+              if (state.uri.queryParameters['view'] == 'export' || state.uri.queryParameters['tab'] == 'export') {
+                return D311PrintNfcPage(session: session);
+              }
+              return D309QrStudioPage(session: session);
+            },
+          ),
+          GoRoute(path: '/print-nfc', builder: (context, state) => D311PrintNfcPage(session: session)),
           for (final item in adminMenu.where((i) => i.path != _dashboard && i.path != _googlePlace && i.path != _printMaterials))
             GoRoute(path: item.path, builder: (context, state) => ComingSoonPage(item: item)),
         ],

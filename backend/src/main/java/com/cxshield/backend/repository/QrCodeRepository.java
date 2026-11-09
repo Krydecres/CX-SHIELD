@@ -40,6 +40,19 @@ public class QrCodeRepository {
         return Optional.ofNullable(store.get(id));
     }
 
+    public java.util.List<QrCode> findByBranchId(UUID branchId) {
+        if (branchId == null) {
+            return java.util.List.copyOf(store.values());
+        }
+        return store.values().stream()
+                .filter(q -> branchId.equals(q.getBranchId()))
+                .toList();
+    }
+
+    public java.util.List<QrCode> findAll() {
+        return java.util.List.copyOf(store.values());
+    }
+
     public QrCode save(QrCode qrCode) {
         store.put(qrCode.getId(), qrCode);
         codeIndex.put(qrCode.getCode().trim().toUpperCase(), qrCode.getId());

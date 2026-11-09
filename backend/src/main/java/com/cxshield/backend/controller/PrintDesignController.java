@@ -85,8 +85,10 @@ public class PrintDesignController {
                 ? request.businessId()
                 : UUID.fromString("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11");
 
+        UUID designId = request.id() != null ? request.id() : UUID.randomUUID();
+
         PrintDesign design = new PrintDesign(
-                null,
+                designId,
                 businessId,
                 qrCode.getId(),
                 template,
@@ -101,6 +103,18 @@ public class PrintDesignController {
 
         PrintDesign saved = printDesignRepository.save(design);
         return ApiResponse.success("Lưu thiết kế ấn phẩm thành công", toDto(saved));
+    }
+
+    /**
+     * E5.1: Xóa mẫu thiết kế ấn phẩm
+     */
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> deleteDesign(@PathVariable UUID id) {
+        boolean deleted = printDesignRepository.deleteById(id);
+        if (!deleted) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "DESIGN_NOT_FOUND", "Không tìm thấy mẫu thiết kế để xóa");
+        }
+        return ApiResponse.success("Xóa mẫu thiết kế thành công", null);
     }
 
     /**

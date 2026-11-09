@@ -54,15 +54,82 @@ class PrintDesignDto {
   }
 
   Map<String, dynamic> toJson() => {
+    if (id.isNotEmpty) 'id': id,
     'businessId': businessId,
     'qrCodeId': qrCodeId,
     'template': template,
     'brandName': brandName,
     'ctaText': ctaText,
     'color': color,
-    'logoUrl': logoUrl,
+    if (logoUrl != null && logoUrl!.isNotEmpty) 'logoUrl': logoUrl,
     'exportFormat': exportFormat,
     'size': size,
+  };
+}
+
+class QrCodeDto {
+  const QrCodeDto({
+    required this.id,
+    required this.branchId,
+    required this.code,
+    required this.type,
+    required this.name,
+    required this.status,
+    required this.targetUrl,
+    this.createdAt,
+  });
+
+  final String id;
+  final String branchId;
+  final String code;
+  final String type;
+  final String name;
+  final String status;
+  final String targetUrl;
+  final DateTime? createdAt;
+
+  factory QrCodeDto.fromJson(Map<String, dynamic> json) {
+    return QrCodeDto(
+      id: json['id'] as String? ?? '',
+      branchId: json['branchId'] as String? ?? '',
+      code: json['code'] as String? ?? '',
+      type: json['type'] as String? ?? 'TABLE',
+      name: json['name'] as String? ?? '',
+      status: json['status'] as String? ?? 'ACTIVE',
+      targetUrl: json['targetUrl'] as String? ?? 'https://cxshield.vn/survey?qr=${json['code']}',
+      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'] as String) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'branchId': branchId,
+    'code': code,
+    'type': type,
+    'name': name,
+    'status': status,
+    'targetUrl': targetUrl,
+  };
+}
+
+class QrCodeCreateRequest {
+  const QrCodeCreateRequest({
+    required this.branchId,
+    this.code,
+    this.type = 'COUNTER',
+    this.name = 'Quầy thu ngân',
+  });
+
+  final String branchId;
+  final String? code;
+  final String type;
+  final String name;
+
+  Map<String, dynamic> toJson() => {
+    'branchId': branchId,
+    if (code != null && code!.trim().isNotEmpty) 'code': code!.trim(),
+    'type': type,
+    'name': name,
   };
 }
 

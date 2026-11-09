@@ -142,5 +142,44 @@ class PrintDesignControllerTest {
         String header = new String(response.getBody(), 0, 8);
         assertTrue(header.startsWith("%PDF-1."));
     }
+
+    @Test
+    @DisplayName("E5.1: Cập nhật mẫu thiết kế hiện có khi truyền ID")
+    void testUpdateExistingDesign() {
+        PrintDesignRequestDto updateReq = new PrintDesignRequestDto(
+                existingDesignId,
+                null,
+                existingQrId,
+                "WINDOW_STICKER",
+                "Maison Coffee Cập Nhật",
+                "Quét mã để nhận ưu đãi 20%",
+                "#991B1B",
+                "https://example.com/logo.png",
+                "PNG",
+                "A5"
+        );
+
+        ApiResponse<PrintDesignResponseDto> response = controller.createOrUpdateDesign(updateReq);
+
+        assertTrue(response.isSuccess());
+        assertEquals(existingDesignId, response.getData().id());
+        assertEquals("WINDOW_STICKER", response.getData().template());
+        assertEquals("Maison Coffee Cập Nhật", response.getData().brandName());
+        assertEquals("#991B1B", response.getData().color());
+    }
+
+    @Test
+    @DisplayName("E5.1: Xóa mẫu thiết kế ấn phẩm thành công và xử lý 404 khi không tìm thấy")
+    void testDeleteDesign() {
+        ApiResponse<Void> deleteRes = controller.deleteDesign(existingDesignId);
+        assertTrue(deleteRes.isSuccess());
+
+        // Kiểm tra xóa lần 2 sẽ ném 404 DESIGN_NOT_FOUND
+        com.cxshield.backend.common.ApiException ex = assertThrows(
+                com.cxshield.backend.common.ApiException.class,
+                () -> controller.deleteDesign(existingDesignId)
+        );
+        assertEquals("DESIGN_NOT_FOUND", ex.getCode());
+    }
 }
 
