@@ -1,0 +1,18 @@
+{
+  "name": "cx-shield-main",
+  "version": "1.0.0",
+  "description": "Review Funnel: Flutter phụ trách giao diện; backend Spring Boot cung cấp REST API; CSDL và xác thực dùng Supabase (PostgreSQL + Supabase Auth).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:smoke": "playwright test",
+    "report": "playwright show-report"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.64.1"
+  }
+}

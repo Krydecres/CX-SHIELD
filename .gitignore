@@ -8,3 +8,8 @@
 .DS_Store
 Thumbs.db
 *.log
+
+# Node.js and Playwright generated files
+node_modules/
+playwright-report/
+test-results/

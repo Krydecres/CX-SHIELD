@@ -5,6 +5,23 @@ import 'app_colors.dart';
 class AppTheme {
   const AppTheme._();
 
+  /// Gắn phông chữ cho bộ cỡ chữ. main() đặt phông Be Vietnam Pro; test để trống nên không tải phông qua mạng.
+  static TextStyle Function(TextStyle)? fontStyle;
+
+  static TextTheme _withFont(TextTheme base) {
+    final apply = fontStyle;
+    if (apply == null) return base;
+    return base.copyWith(
+      headlineSmall: apply(base.headlineSmall!),
+      titleLarge: apply(base.titleLarge!),
+      titleMedium: apply(base.titleMedium!),
+      bodyLarge: apply(base.bodyLarge!),
+      bodyMedium: apply(base.bodyMedium!),
+      bodySmall: apply(base.bodySmall!),
+      labelLarge: apply(base.labelLarge!),
+    );
+  }
+
   static ThemeData light() => _build(Brightness.light, AppColors.light);
 
   static ThemeData dark() => _build(Brightness.dark, AppColors.dark);
@@ -33,6 +50,18 @@ class AppTheme {
       borderSide: BorderSide(color: c.border),
     );
 
+    final baseTextTheme = TextTheme(
+      headlineSmall: TextStyle(fontSize: 26, height: 1.25, fontWeight: FontWeight.w700, letterSpacing: -0.3, color: c.textPrimary),
+      titleLarge: TextStyle(fontSize: 20, height: 1.3, fontWeight: FontWeight.w700, color: c.textPrimary),
+      titleMedium: TextStyle(fontSize: 16, height: 1.4, fontWeight: FontWeight.w600, color: c.textPrimary),
+      bodyLarge: TextStyle(fontSize: 15, height: 1.5, color: c.textPrimary),
+      bodyMedium: TextStyle(fontSize: 15, height: 1.5, color: c.textPrimary),
+      bodySmall: TextStyle(fontSize: 13, height: 1.45, color: c.textSecondary),
+      labelLarge: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+    );
+    final textTheme = _withFont(baseTextTheme);
+    const pressDuration = Duration(milliseconds: 140);
+
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
@@ -40,14 +69,7 @@ class AppTheme {
       extensions: [c],
       scaffoldBackgroundColor: c.background,
       dividerColor: c.border,
-      textTheme: TextTheme(
-        headlineSmall: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: c.textPrimary),
-        titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: c.textPrimary),
-        titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: c.textPrimary),
-        bodyMedium: TextStyle(fontSize: 14, color: c.textPrimary),
-        bodySmall: TextStyle(fontSize: 12.5, color: c.textSecondary),
-        labelLarge: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-      ),
+      textTheme: textTheme,
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: c.surface,
@@ -68,7 +90,8 @@ class AppTheme {
           minimumSize: const Size(0, 44),
           padding: const EdgeInsets.symmetric(horizontal: 20),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          textStyle: textTheme.labelLarge,
+          animationDuration: pressDuration,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -78,13 +101,14 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           side: BorderSide(color: c.border),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          textStyle: textTheme.labelLarge,
+          animationDuration: pressDuration,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: c.accent,
-          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          textStyle: textTheme.labelLarge,
         ),
       ),
       snackBarTheme: SnackBarThemeData(

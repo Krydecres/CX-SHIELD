@@ -107,16 +107,20 @@ class _Sidebar extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Text(
-                        roleLabel(role, branchCount: session.branches.length),
-                        style: TextStyle(color: context.colors.onSidebarMuted, fontSize: 12.5),
+                      Flexible(
+                        child: Text(
+                          roleLabel(role, branchCount: session.branches.length),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: context.colors.onSidebarMuted, fontSize: 13),
+                        ),
                       ),
                       Text(' · ', style: TextStyle(color: context.colors.onSidebarMuted)),
                       InkWell(
                         onTap: session.signOut,
                         child: Text(
                           'Đăng xuất',
-                          style: TextStyle(color: context.colors.onSidebar, fontSize: 12.5, fontWeight: FontWeight.w600),
+                          style: TextStyle(color: context.colors.onSidebar, fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ],
@@ -223,24 +227,38 @@ class _Header extends StatelessWidget {
         border: Border(bottom: BorderSide(color: context.colors.border)),
       ),
       padding: const EdgeInsets.fromLTRB(24, 14, 24, 10),
-      child: Row(
-        children: [
-          if (showMenuButton)
-            IconButton(icon: const Icon(Icons.menu), onPressed: () => Scaffold.of(context).openDrawer()),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 4),
-                Text('Trang chủ / $title', style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
-          ),
-          if (session.branches.isNotEmpty) _BranchSelector(session: session),
-          const SizedBox(width: 8),
-          const ThemeModeButton(),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Màn hẹp: chọn chi nhánh xuống dòng riêng để tiêu đề không bị ép.
+          final narrow = constraints.maxWidth < 560;
+          final hasBranches = session.branches.isNotEmpty;
+          final topRow = Row(
+            children: [
+              if (showMenuButton)
+                IconButton(icon: const Icon(Icons.menu), onPressed: () => Scaffold.of(context).openDrawer()),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleLarge),
+                    if (!narrow) ...[
+                      const SizedBox(height: 4),
+                      Text('Trang chủ / $title', style: Theme.of(context).textTheme.bodySmall),
+                    ],
+                  ],
+                ),
+              ),
+              if (hasBranches && !narrow) _BranchSelector(session: session),
+              const SizedBox(width: 8),
+              const ThemeModeButton(),
+            ],
+          );
+          if (!narrow || !hasBranches) return topRow;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [topRow, const SizedBox(height: 8), _BranchSelector(session: session)],
+          );
+        },
       ),
     );
   }
@@ -287,7 +305,7 @@ class _BranchSelector extends StatelessWidget {
             Icon(Icons.store_outlined, size: 18, color: context.colors.secondary),
             const SizedBox(width: 8),
             ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 220),
+              constraints: const BoxConstraints(maxWidth: 180),
               child: Text(
                 'Chi nhánh: ${selected?.name ?? '—'}',
                 overflow: TextOverflow.ellipsis,
