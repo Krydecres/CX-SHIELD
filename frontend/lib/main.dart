@@ -10,6 +10,21 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
 import 'screens/m1_01_rating_screen.dart';
 
+/// Trích xuất mã QR từ URL (nếu là luồng khách hàng quét mã).
+/// Chỉ nhận qua tham số ?qr= hoặc đường dẫn /s/<mã>.
+/// Tuyệt đối KHÔNG nhận ?code= vì Supabase dùng cho luồng xác thực OAuth / email / đặt lại mật khẩu.
+String? extractQrCode(Uri uri) {
+  if (uri.queryParameters.containsKey('qr')) {
+    final val = uri.queryParameters['qr']?.trim();
+    if (val != null && val.isNotEmpty) return val;
+  }
+  if (uri.pathSegments.length >= 2 && uri.pathSegments.first == 's') {
+    final val = uri.pathSegments[1].trim();
+    if (val.isNotEmpty) return val;
+  }
+  return null;
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -18,14 +33,9 @@ Future<void> main() async {
   bool hasQrParam = false;
   try {
     final uri = Uri.base;
-    if (uri.queryParameters.containsKey('qr')) {
-      qrCode = uri.queryParameters['qr']!;
-      hasQrParam = true;
-    } else if (uri.queryParameters.containsKey('code')) {
-      qrCode = uri.queryParameters['code']!;
-      hasQrParam = true;
-    } else if (uri.pathSegments.length >= 2 && uri.pathSegments.first == 's') {
-      qrCode = uri.pathSegments[1];
+    final detectedQr = extractQrCode(uri);
+    if (detectedQr != null) {
+      qrCode = detectedQr;
       hasQrParam = true;
     }
   } catch (_) {}
