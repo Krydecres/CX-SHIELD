@@ -82,14 +82,14 @@ VALUES (
     TRUE
 ) ON CONFLICT (id) DO NOTHING;
 
--- 7. Thêm các mã QR mẫu cho Tester quét thử (đặc biệt là MC-B04 mặc định)
+-- 7. Thêm các mã QR mẫu cho Tester quét thử (đặc biệt là MC-B04 mặc định, tất cả dùng kiểu 'TABLE')
 INSERT INTO public.qr_codes (id, branch_id, code, type, name, status)
 VALUES
     ('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33', 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', 'MC-B04', 'TABLE', 'Bàn 04', 'ACTIVE'),
     ('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a31', 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', 'MC-B01', 'TABLE', 'Bàn 01', 'ACTIVE'),
     ('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a32', 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', 'MC-B02', 'TABLE', 'Bàn 02', 'ACTIVE'),
-    ('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a35', 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', 'MC-VIP', 'AREA', 'Khu VIP 01', 'ACTIVE'),
-    ('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a36', 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', 'MC-QUAY', 'COUNTER', 'Quầy Thu Ngân', 'ACTIVE')
+    ('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a34', 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', 'MC-B03', 'TABLE', 'Bàn 03', 'ACTIVE'),
+    ('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a35', 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', 'MC-VIP', 'TABLE', 'Bàn VIP 01', 'ACTIVE')
 ON CONFLICT (code) DO UPDATE 
     SET status = 'ACTIVE', name = EXCLUDED.name, branch_id = EXCLUDED.branch_id;
 
