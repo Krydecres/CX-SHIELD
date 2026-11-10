@@ -6,6 +6,7 @@
 -- 1. Bảng phiên khảo sát (SurveySession)
 CREATE TABLE IF NOT EXISTS survey_sessions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    business_id UUID NOT NULL,
     qr_code_id UUID NOT NULL,
     branch_id UUID NOT NULL,
     customer_id UUID,
@@ -24,9 +25,10 @@ CREATE TABLE IF NOT EXISTS survey_sessions (
 -- 2. Bảng kết quả đánh giá sao (SurveyResponse)
 CREATE TABLE IF NOT EXISTS survey_responses (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    business_id UUID NOT NULL,
     session_id UUID NOT NULL,
     star_rating INTEGER NOT NULL CHECK (star_rating BETWEEN 1 AND 5),
-    sentiment_group TEXT NOT NULL, -- POSITIVE (4-5 sao) hoặc NEGATIVE (1-3 sao)
+    sentiment_group TEXT NOT NULL, -- SATISFIED (4-5 sao) hoặc UNSATISFIED (1-3 sao)
     selected_keyword_ids UUID[],
     copied_prompt_text TEXT,
     is_public_bypass BOOLEAN DEFAULT FALSE,
@@ -56,6 +58,8 @@ CREATE TABLE IF NOT EXISTS review_platforms (
 -- 4. Bảng góp ý nội bộ (Feedback)
 CREATE TABLE IF NOT EXISTS feedbacks (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    business_id UUID NOT NULL,
+    branch_id UUID,
     response_id UUID NOT NULL,
     customer_id UUID,
     comment_text TEXT,
@@ -73,4 +77,3 @@ CREATE TABLE IF NOT EXISTS feedbacks (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
-

@@ -20,6 +20,7 @@ import com.cxshield.backend.repository.SurveySessionRepository;
 import com.cxshield.backend.service.SurveyService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -27,6 +28,7 @@ import java.util.UUID;
 
 @Service
 public class SurveyServiceImpl implements SurveyService {
+
     private static final Logger log = LoggerFactory.getLogger(SurveyServiceImpl.class);
 
     private final QrCodeRepository qrCodeRepository;
@@ -36,12 +38,13 @@ public class SurveyServiceImpl implements SurveyService {
     private final SurveyResponseRepository surveyResponseRepository;
     private final ReviewPlatformRepository reviewPlatformRepository;
 
-    public SurveyServiceImpl(QrCodeRepository qrCodeRepository,
-                             BranchRepository branchRepository,
-                             BusinessRepository businessRepository,
-                             SurveySessionRepository surveySessionRepository,
-                             SurveyResponseRepository surveyResponseRepository,
-                             @org.springframework.beans.factory.annotation.Qualifier("surveyReviewPlatformRepository") ReviewPlatformRepository reviewPlatformRepository) {
+    public SurveyServiceImpl(
+            QrCodeRepository qrCodeRepository,
+            BranchRepository branchRepository,
+            BusinessRepository businessRepository,
+            SurveySessionRepository surveySessionRepository,
+            SurveyResponseRepository surveyResponseRepository,
+            @Qualifier("surveyReviewPlatformRepository") ReviewPlatformRepository reviewPlatformRepository) {
         this.qrCodeRepository = qrCodeRepository;
         this.branchRepository = branchRepository;
         this.businessRepository = businessRepository;
@@ -54,21 +57,13 @@ public class SurveyServiceImpl implements SurveyService {
     public SurveyInitResponseDto getOrInitSession(String qrCodeValue, String clientIp, String userAgent) {
         log.info("Khách quét mã QR: {}", qrCodeValue);
 
-        // 1. Tìm hoặc fallback mã QR
-        QrCode qrCode = qrCodeRepository.findByCode(qrCodeValue)
-                .orElseGet(() -> {
-                    // Nếu khách quét mã chưa có sẵn trong DB, tự động gắn với chi nhánh mẫu để đảm bảo trải nghiệm tức thì (<1s)
-                    UUID defaultBranchId = UUID.fromString("b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22");
-                    QrCode newQr = new QrCode(
-                            UUID.randomUUID(),
-                            defaultBranchId,
-                            qrCodeValue != null ? qrCodeValue : "DEFAULT",
-                            "TABLE",
-                            qrCodeValue != null ? "Vị trí " + qrCodeValue : "Bàn trải nghiệm",
-                            "ACTIVE"
-                    );
-                    return qrCodeRepository.save(newQr);
-                });
+        if (qrCodeValue == null || qrCodeValue.trim().isEmpty()) {
+            throw new IllegalArgumentException("Mã QR không hợp lệ hoặc bị trống");
+        }
+
+        // 1. Tìm mã QR trong CSDL Supabase (Bỏ chi nhánh mẫu và việc tự tạo mã QR; không tìm thấy báo lỗi)
+        QrCode qrCode = qrCodeRepository.findByCode(qrCodeValue.trim())
+                .orElseThrow(() -> new IllegalArgumentException("Mã QR không tồn tại trong hệ thống: " + qrCodeValue));
 
         // 2. Lấy thông tin Chi nhánh & Cơ sở
         Branch branch = branchRepository.findById(qrCode.getBranchId())
@@ -76,10 +71,11 @@ public class SurveyServiceImpl implements SurveyService {
         Business business = businessRepository.findById(branch.getBusinessId())
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy cơ sở kinh doanh"));
 
-        // 3. Tạo survey_session mới ghi nhận lượt quét
+        // 3. Tạo survey_session mới ghi nhận lượt quét vào Supabase (Bắt buộc business_id, status STARTED)
         SurveySession session = new SurveySession();
-        session.setQrCodeId(qrCode.getId());
+        session.setBusinessId(business.getId());
         session.setBranchId(branch.getId());
+        session.setQrCodeId(qrCode.getId());
         session.setTableOrAreaCode(qrCode.getName());
         session.setClientIp(clientIp);
         session.setUserAgent(userAgent);
@@ -115,24 +111,27 @@ public class SurveyServiceImpl implements SurveyService {
 
         int stars = requestDto.getStarRating();
         boolean isPositive = stars >= 4;
-        String sentimentGroup = isPositive ? "POSITIVE" : "NEGATIVE";
+        // Đổi sentiment_group: CSDL chỉ nhận SATISFIED / UNSATISFIED
+        String sentimentGroup = isPositive ? "SATISFIED" : "UNSATISFIED";
 
-        // Cập nhật trạng thái phiên khảo sát
+        // Cập nhật trạng thái phiên khảo sát về đúng enum session_status: COMPLETED
         session.setStatus("COMPLETED");
         session.setCompletedAt(Instant.now());
         session.setUpdatedAt(Instant.now());
         surveySessionRepository.save(session);
 
-        // Lưu bản ghi kết quả đánh giá survey_responses
+        // Lưu bản ghi kết quả đánh giá survey_responses vào Supabase (Bắt buộc business_id)
         SurveyResponse response = new SurveyResponse();
+        response.setBusinessId(session.getBusinessId());
         response.setSessionId(session.getId());
         response.setStarRating(stars);
         response.setSentimentGroup(sentimentGroup);
         response.setRatedAt(Instant.now());
+        response.setUpdatedAt(Instant.now());
         surveyResponseRepository.save(response);
 
         // Lấy hotline chi nhánh nếu có khiếu nại khẩn
-        String hotline = "02838221122";
+        String hotline = null;
         Branch branch = branchRepository.findById(session.getBranchId()).orElse(null);
         if (branch != null && branch.getHotline() != null) {
             hotline = branch.getHotline();
@@ -170,53 +169,43 @@ public class SurveyServiceImpl implements SurveyService {
             throw new IllegalArgumentException("Response ID không được để trống");
         }
 
-        UUID branchId = UUID.fromString("b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22");
-        SurveyResponse response = surveyResponseRepository.findById(requestDto.getResponseId()).orElse(null);
+        SurveyResponse response = surveyResponseRepository.findById(requestDto.getResponseId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy kết quả đánh giá"));
 
-        if (response != null) {
-            // E1.4: Cập nhật CSDL survey_responses
-            response.setPublicBypass(true);
-            response.setRedirectClickedAt(Instant.now());
-            response.setUpdatedAt(Instant.now());
+        SurveySession session = surveySessionRepository.findById(response.getSessionId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiên khảo sát tương ứng"));
 
-            SurveySession session = surveySessionRepository.findById(response.getSessionId()).orElse(null);
-            if (session != null && session.getBranchId() != null) {
-                branchId = session.getBranchId();
-            }
+        UUID branchId = session.getBranchId();
 
-            // Gắn platform Google Maps
-            ReviewPlatform platform = reviewPlatformRepository.findByBranchId(branchId).orElse(null);
-            if (platform != null) {
-                response.setReviewPlatformId(platform.getId());
-            }
+        // E1.4: Cập nhật CSDL survey_responses
+        response.setPublicBypass(true);
+        response.setRedirectClickedAt(Instant.now());
+        response.setUpdatedAt(Instant.now());
 
-            surveyResponseRepository.save(response);
-            log.info("Khách chọn lối đi đánh giá công khai Google Maps (Response ID: {})", response.getId());
+        // Gắn platform Google Maps
+        ReviewPlatform platform = reviewPlatformRepository.findByBranchId(branchId).orElse(null);
+        if (platform != null) {
+            response.setReviewPlatformId(platform.getId());
         }
 
-        // Lấy link đánh giá Google Maps của cơ sở
-        ReviewPlatform platform = reviewPlatformRepository.findByBranchId(branchId)
-                .orElseGet(() -> {
-                    UUID platformId = UUID.fromString("d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44");
-                    return new ReviewPlatform(
-                            platformId,
-                            UUID.fromString("b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22"),
-                            "Google Maps",
-                            "ChIJ1234567890abcdef",
-                            "https://search.google.com/local/writereview?placeid=ChIJ1234567890abcdef",
-                            "Maison Coffee & Bistro - Đồng Khởi",
-                            "123 Đường Đồng Khởi, Bến Nghé, Quận 1, TP. Hồ Chí Minh"
-                    );
-                });
+        surveyResponseRepository.save(response);
+        log.info("Khách chọn lối đi đánh giá công khai Google Maps (Response ID: {})", response.getId());
+
+        String reviewUrl = platform != null && platform.getReviewDirectUrl() != null
+                ? platform.getReviewDirectUrl()
+                : "https://maps.google.com";
+        String platformName = platform != null ? platform.getPlatformName() : "Google Maps";
+        String placeName = platform != null ? platform.getPlaceName() : "";
+        UUID platformId = platform != null ? platform.getId() : null;
 
         return new PublicBypassResponseDto(
                 requestDto.getResponseId(),
                 true,
-                Instant.now(),
-                platform.getId(),
-                platform.getPlatformName(),
-                platform.getReviewDirectUrl(),
-                platform.getPlaceName(),
+                response.getRedirectClickedAt(),
+                platformId,
+                platformName,
+                reviewUrl,
+                placeName,
                 "Chuyển tiếp tới trang đánh giá công khai Google Maps của cơ sở"
         );
     }

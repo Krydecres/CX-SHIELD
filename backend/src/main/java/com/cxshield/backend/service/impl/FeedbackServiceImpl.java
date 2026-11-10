@@ -54,7 +54,7 @@ public class FeedbackServiceImpl implements FeedbackService {
             throw new IllegalArgumentException("Mã kết quả đánh giá (responseId) không được để trống");
         }
 
-        // 2. Kiểm tra nội dung góp ý (Bắt buộc, 5 - 1000 ký tự)
+        // 2. Kiểm tra nội dung góp ý (Bắt buộc, 3 - 1000 ký tự)
         if (dto.getCommentText() == null || dto.getCommentText().trim().isEmpty()) {
             throw new IllegalArgumentException("Nội dung góp ý không được để trống");
         }
@@ -76,21 +76,21 @@ public class FeedbackServiceImpl implements FeedbackService {
             phone = sanitizedPhone;
         }
 
-        // 4. Lấy thông tin đánh giá gốc để trích xuất branchId & starRating
-        int starRating = 2; // Mặc định trong nhóm 1-3 sao
-        UUID branchId = UUID.fromString("b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22");
+        // 4. Lấy thông tin đánh giá gốc từ Supabase để trích xuất businessId, branchId & starRating
+        SurveyResponse response = surveyResponseRepository.findById(dto.getResponseId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy kết quả đánh giá cho responseId: " + dto.getResponseId()));
+        int starRating = response.getStarRating();
 
-        SurveyResponse response = surveyResponseRepository.findById(dto.getResponseId()).orElse(null);
-        if (response != null) {
-            starRating = response.getStarRating();
-            SurveySession session = surveySessionRepository.findById(response.getSessionId()).orElse(null);
-            if (session != null && session.getBranchId() != null) {
-                branchId = session.getBranchId();
-            }
-        }
+        SurveySession session = surveySessionRepository.findById(response.getSessionId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiên khảo sát tương ứng"));
 
-        // 5. Khởi tạo và lưu thực thể Feedback
+        UUID businessId = session.getBusinessId();
+        UUID branchId = session.getBranchId();
+
+        // 5. Khởi tạo và lưu thực thể Feedback vào Supabase (Bắt buộc business_id)
         Feedback feedback = new Feedback();
+        feedback.setBusinessId(businessId);
+        feedback.setBranchId(branchId);
         feedback.setResponseId(dto.getResponseId());
         feedback.setCommentText(comment);
         feedback.setCustomerPhone(phone);
@@ -109,7 +109,7 @@ public class FeedbackServiceImpl implements FeedbackService {
         // Tuân thủ quy ước: KHÔNG ghi SĐT và nội dung ra log, chỉ log ID
         log.info("Đã lưu thành công góp ý nội bộ ID: {} cho Response ID: {}", feedback.getId(), dto.getResponseId());
 
-        // 6. Phát sự kiện để E2.2 gửi cảnh báo (Telegram / Zalo / Email)
+        // 6. Phát sự kiện để E2.2 gửi cảnh báo (Telegram / Zalo / Email) tới chi nhánh thật
         eventPublisher.publishEvent(new FeedbackCreatedEvent(
                 feedback.getId(),
                 dto.getResponseId(),
@@ -135,4 +135,3 @@ public class FeedbackServiceImpl implements FeedbackService {
         return feedbackTopicRepository.findAllActive();
     }
 }
-

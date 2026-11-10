@@ -49,8 +49,7 @@ create table public.alert_channels (
   constraint uq_alert_channels_branch_type unique (branch_id, type)
 );
 
--- feedback_id chưa có khoá ngoại sang feedbacks: luồng khảo sát còn lưu góp ý trong bộ nhớ backend.
--- Thêm khoá ngoại sau khi góp ý được lưu vào Supabase.
+-- feedback_id có khoá ngoại sang feedbacks (E1.1 / E2.2).
 create table public.notifications (
   id uuid not null default gen_random_uuid(),
   business_id uuid not null,
@@ -72,7 +71,8 @@ create table public.notifications (
   constraint fk_notifications_business foreign key (business_id) references public.businesses (id) on delete cascade,
   constraint fk_notifications_branch foreign key (branch_id) references public.branches (id) on delete cascade,
   constraint fk_notifications_rule foreign key (rule_id) references public.alert_rules (id) on delete set null,
-  constraint fk_notifications_channel foreign key (channel_id) references public.alert_channels (id) on delete cascade
+  constraint fk_notifications_channel foreign key (channel_id) references public.alert_channels (id) on delete cascade,
+  constraint fk_notifications_feedback foreign key (feedback_id) references public.feedbacks (id) on delete set null
 );
 
 create index idx_alert_channels_business on public.alert_channels (business_id);

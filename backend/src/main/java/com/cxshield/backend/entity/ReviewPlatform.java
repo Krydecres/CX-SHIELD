@@ -1,21 +1,50 @@
 package com.cxshield.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ReviewPlatform {
+    @JsonProperty("id")
     private UUID id;
+
+    @JsonProperty("branch_id")
     private UUID branchId;
+
+    @JsonProperty("platform_name")
     private String platformName; // Google Maps, TripAdvisor, Fanpage, ...
+
+    @JsonProperty("google_place_id")
     private String googlePlaceId;
+
+    @JsonProperty("review_direct_url")
     private String reviewDirectUrl;
+
+    @JsonProperty("place_name")
     private String placeName;
+
+    @JsonProperty("place_address")
     private String placeAddress;
+
+    @JsonProperty("connection_status")
     private String connectionStatus; // CONNECTED, DISCONNECTED
+
+    @JsonProperty("routing_weight_percent")
     private BigDecimal routingWeightPercent;
+
+    @JsonProperty("is_active")
     private boolean isActive;
+
+    @JsonProperty("created_at")
     private Instant createdAt;
+
+    @JsonProperty("updated_at")
     private Instant updatedAt;
 
     public ReviewPlatform() {
@@ -68,4 +97,3 @@ public class ReviewPlatform {
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }
-

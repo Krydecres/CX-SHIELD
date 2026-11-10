@@ -1,18 +1,43 @@
 package com.cxshield.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.Instant;
 import java.util.UUID;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Branch {
+    @JsonProperty("id")
     private UUID id;
+
+    @JsonProperty("business_id")
     private UUID businessId;
+
+    @JsonProperty("code")
     private String code;
+
+    @JsonProperty("name")
     private String name;
+
+    @JsonProperty("address")
     private String address;
+
+    @JsonProperty("hotline")
     private String hotline;
+
+    @JsonProperty("manager_membership_id")
     private UUID managerMembershipId;
+
+    @JsonProperty("status")
     private String status;
+
+    @JsonProperty("created_at")
     private Instant createdAt;
+
+    @JsonProperty("updated_at")
     private Instant updatedAt;
 
     public Branch() {
@@ -54,4 +79,3 @@ public class Branch {
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }
-
