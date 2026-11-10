@@ -3,6 +3,7 @@ import 'package:cx_shield/core/session/session_controller.dart';
 import 'package:cx_shield/features/d3_00_admin_shell/admin_menu.dart';
 import 'package:cx_shield/features/d3_01_auth/auth_error_messages.dart';
 import 'package:cx_shield/features/d3_02_onboarding/onboarding_validators.dart';
+import 'package:cx_shield/main.dart' show extractQrCode;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -107,6 +108,25 @@ void main() {
 
     test('làm mới hồ sơ không làm mất trang đang xem', () {
       expect(sessionRedirect(SessionStatus.loadingProfile, true, u('/funnel/google-place'), hasProfile: true), isNull);
+    });
+
+    test('URL /?code=abc phải vào luồng đăng nhập, không mở khảo sát', () {
+      final codeUri = Uri.parse('http://localhost:3000/?code=abc');
+      expect(extractQrCode(codeUri), isNull);
+      expect(sessionRedirect(SessionStatus.signedOut, false, codeUri), '/login');
+      expect(sessionRedirect(SessionStatus.ready, true, codeUri), '/dashboard');
+    });
+
+    test('URL /?qr=MC-B04 và /s/MC-B04 vẫn mở khảo sát', () {
+      final qrParamUri = Uri.parse('http://localhost:3000/?qr=MC-B04');
+      final pathUri = Uri.parse('http://localhost:3000/s/MC-B04');
+      final surveyUri = Uri.parse('http://localhost:3000/survey?qr=MC-B04');
+
+      expect(extractQrCode(qrParamUri), 'MC-B04');
+      expect(extractQrCode(pathUri), 'MC-B04');
+
+      expect(sessionRedirect(SessionStatus.signedOut, false, pathUri), isNull);
+      expect(sessionRedirect(SessionStatus.signedOut, false, surveyUri), isNull);
     });
   });
 
