@@ -11,7 +11,7 @@ enum SessionStatus { initializing, signedOut, loadingProfile, ready, profileErro
 /// Trạng thái đăng nhập + hồ sơ (cơ sở, chi nhánh đang chọn) dùng chung cho router và khung admin.
 class SessionController extends ChangeNotifier {
   SessionController({required this.api, GoTrueClient? auth}) : _auth = auth ?? Supabase.instance.client.auth {
-    _subscription = _auth.onAuthStateChange.listen(_onAuthChange);
+    _subscription = _auth.onAuthStateChange.listen(_onAuthChange, onError: _onAuthError);
   }
 
   final ApiClient api;
@@ -42,6 +42,17 @@ class SessionController extends ChangeNotifier {
         _clear();
       default:
         break;
+    }
+  }
+
+  /// Link đăng nhập đã dùng hoặc hết hạn (ví dụ tải lại trang còn `?code=`): Supabase chỉ phát lỗi,
+  /// không phát initialSession, nên tự quyết định trạng thái để app không đứng ở màn chờ.
+  void _onAuthError(Object error) {
+    if (status != SessionStatus.initializing) return;
+    if (_auth.currentSession == null) {
+      _clear();
+    } else {
+      unawaited(reloadProfile());
     }
   }
 

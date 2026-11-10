@@ -12,12 +12,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class FakeAuth extends Fake implements GoTrueClient {
   final events = StreamController<AuthState>.broadcast();
   int signOutCount = 0;
+  Session? session;
 
   @override
   Stream<AuthState> get onAuthStateChange => events.stream;
 
   @override
-  User? get currentUser => null;
+  User? get currentUser => session?.user;
+
+  @override
+  Session? get currentSession => session;
 
   @override
   Future<void> signOut({SignOutScope scope = SignOutScope.local}) async => signOutCount++;
@@ -150,6 +154,33 @@ void main() {
     await pumpEventQueue();
 
     expect(session.status, SessionStatus.signedOut);
+  });
+
+  test('link đăng nhập lỗi lúc mở app và chưa có phiên thì về màn đăng nhập', () async {
+    auth.events.addError(const AuthException('Code verifier could not be found in local storage.'));
+    await pumpEventQueue();
+
+    expect(session.status, SessionStatus.signedOut);
+  });
+
+  test('link đăng nhập lỗi nhưng đã có phiên lưu sẵn thì vẫn tải hồ sơ', () async {
+    auth.session = userSession('u1');
+
+    auth.events.addError(const AuthException('Code verifier could not be found in local storage.'));
+    await pumpEventQueue();
+
+    expect(session.status, SessionStatus.ready);
+    expect(session.me?.userId, 'u1');
+  });
+
+  test('lỗi xác thực sau khi đã đăng nhập không làm mất hồ sơ', () async {
+    await session.reloadProfile();
+
+    auth.events.addError(const AuthException('Token refresh failed'));
+    await pumpEventQueue();
+
+    expect(session.status, SessionStatus.ready);
+    expect(session.me?.userId, 'u1');
   });
 
   test('sự kiện đăng nhập tải hồ sơ', () async {
