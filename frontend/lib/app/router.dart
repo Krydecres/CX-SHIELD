@@ -73,7 +73,7 @@ GoRouter createRouter(SessionController session) {
       GoRoute(
         path: '/survey',
         builder: (context, state) {
-          final qr = state.uri.queryParameters['qr'] ?? state.uri.queryParameters['code'] ?? 'MC-B04';
+          final qr = state.uri.queryParameters['qr'] ?? 'MC-B04';
           return M101RatingScreen(qrCode: qr);
         },
       ),
