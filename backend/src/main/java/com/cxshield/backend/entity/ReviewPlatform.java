@@ -90,7 +90,10 @@ public class ReviewPlatform {
     public void setConnectionStatus(String connectionStatus) { this.connectionStatus = connectionStatus; }
     public BigDecimal getRoutingWeightPercent() { return routingWeightPercent; }
     public void setRoutingWeightPercent(BigDecimal routingWeightPercent) { this.routingWeightPercent = routingWeightPercent; }
+    @JsonProperty("is_active")
     public boolean isActive() { return isActive; }
+
+    @JsonProperty("is_active")
     public void setActive(boolean active) { isActive = active; }
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }

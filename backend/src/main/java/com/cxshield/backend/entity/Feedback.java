@@ -103,7 +103,10 @@ public class Feedback {
     public void setTranscriptText(String transcriptText) { this.transcriptText = transcriptText; }
     public String getSttStatus() { return sttStatus; }
     public void setSttStatus(String sttStatus) { this.sttStatus = sttStatus; }
+    @JsonProperty("is_urgent_callback")
     public boolean isUrgentCallback() { return isUrgentCallback; }
+
+    @JsonProperty("is_urgent_callback")
     public void setUrgentCallback(boolean urgentCallback) { isUrgentCallback = urgentCallback; }
     public int getUrgencyLevel() { return urgencyLevel; }
     public void setUrgencyLevel(int urgencyLevel) { this.urgencyLevel = urgencyLevel; }

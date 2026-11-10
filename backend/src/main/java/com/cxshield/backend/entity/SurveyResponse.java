@@ -72,7 +72,10 @@ public class SurveyResponse {
     public void setSelectedKeywordIds(List<UUID> selectedKeywordIds) { this.selectedKeywordIds = selectedKeywordIds; }
     public String getCopiedPromptText() { return copiedPromptText; }
     public void setCopiedPromptText(String copiedPromptText) { this.copiedPromptText = copiedPromptText; }
+    @JsonProperty("is_public_bypass")
     public boolean isPublicBypass() { return isPublicBypass; }
+
+    @JsonProperty("is_public_bypass")
     public void setPublicBypass(boolean isPublicBypass) { this.isPublicBypass = isPublicBypass; }
     public UUID getReviewPlatformId() { return reviewPlatformId; }
     public void setReviewPlatformId(UUID reviewPlatformId) { this.reviewPlatformId = reviewPlatformId; }
