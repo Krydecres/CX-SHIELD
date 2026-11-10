@@ -14,6 +14,9 @@ public class ReviewPlatform {
     @JsonProperty("id")
     private UUID id;
 
+    @JsonProperty("business_id")
+    private UUID businessId;
+
     @JsonProperty("branch_id")
     private UUID branchId;
 
@@ -58,7 +61,12 @@ public class ReviewPlatform {
     }
 
     public ReviewPlatform(UUID id, UUID branchId, String platformName, String googlePlaceId, String reviewDirectUrl, String placeName, String placeAddress) {
+        this(id, null, branchId, platformName, googlePlaceId, reviewDirectUrl, placeName, placeAddress);
+    }
+
+    public ReviewPlatform(UUID id, UUID businessId, UUID branchId, String platformName, String googlePlaceId, String reviewDirectUrl, String placeName, String placeAddress) {
         this.id = id;
+        this.businessId = businessId;
         this.branchId = branchId;
         this.platformName = platformName;
         this.googlePlaceId = googlePlaceId;
@@ -74,6 +82,8 @@ public class ReviewPlatform {
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
+    public UUID getBusinessId() { return businessId; }
+    public void setBusinessId(UUID businessId) { this.businessId = businessId; }
     public UUID getBranchId() { return branchId; }
     public void setBranchId(UUID branchId) { this.branchId = branchId; }
     public String getPlatformName() { return platformName; }

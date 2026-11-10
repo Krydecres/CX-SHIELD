@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS survey_responses (
 -- 3. Bảng nền tảng đánh giá (ReviewPlatform)
 CREATE TABLE IF NOT EXISTS review_platforms (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    business_id UUID NOT NULL,
     branch_id UUID NOT NULL,
     platform_name TEXT NOT NULL DEFAULT 'Google Maps',
     google_place_id TEXT,

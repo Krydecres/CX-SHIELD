@@ -122,7 +122,7 @@ class EntityJsonSerializationTest {
     @DisplayName("ReviewPlatform: JSON gửi đi chỉ chứa đúng tên cột CSDL, không chứa active hay camelCase")
     void reviewPlatformJsonKeysMatchDatabaseColumns() throws Exception {
         ReviewPlatform platform = new ReviewPlatform(
-                UUID.randomUUID(), UUID.randomUUID(), "Google Maps", "ChIJ123",
+                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "Google Maps", "ChIJ123",
                 "https://maps.google.com", "Maison", "123 Le Loi"
         );
         platform.setActive(true);
@@ -130,7 +130,7 @@ class EntityJsonSerializationTest {
         Map<String, Object> jsonMap = toMap(platform);
 
         Set<String> dbColumns = Set.of(
-                "id", "branch_id", "platform_name", "google_place_id", "review_direct_url",
+                "id", "business_id", "branch_id", "platform_name", "google_place_id", "review_direct_url",
                 "place_name", "place_address", "connection_status", "routing_weight_percent",
                 "is_active", "created_at", "updated_at"
         );
@@ -140,6 +140,7 @@ class EntityJsonSerializationTest {
         assertThat(jsonMap).containsKey("is_active");
         assertThat(jsonMap).doesNotContainKey("active");
         assertThat(jsonMap).doesNotContainKey("isActive");
+        assertThat(jsonMap).doesNotContainKey("businessId");
         assertThat(jsonMap).doesNotContainKey("branchId");
         assertThat(jsonMap).doesNotContainKey("platformName");
         assertThat(jsonMap).doesNotContainKey("googlePlaceId");
