@@ -85,13 +85,24 @@ Toàn bộ **96 automated test methods** (17 mới + 79 hồi quy) đã được
 
 ### 4.1. Phân hệ Backend (Spring Boot 4.0.0 / Java 21)
 - Lệnh: `.\mvnw.cmd test '-Dtest=DashboardServiceTest,DashboardRepositoryTest,GoogleMetricsSnapshotJobTest,DashboardControllerSecurityTest'`
-- **Kết quả:** `Tests run: 26, Failures: 0, Errors: 0, Skipped: 0`
+- **Chi tiết phân bổ test methods:**
+  - `DashboardControllerSecurityTest.java`: 6 tests passed (Mới)
+  - `DashboardServiceTest.java`: 13 tests passed (Hồi quy)
+  - `DashboardRepositoryTest.java`: 3 tests passed (Hồi quy)
+  - `GoogleMetricsSnapshotJobTest.java`: 4 tests passed (Hồi quy)
+- **Kết quả:** `Tests run: 26, Failures: 0, Errors: 0, Skipped: 0` (26/26 passed).
 - **Thời gian:** 9.366s.
 - **Trạng thái:** `BUILD SUCCESS`.
 
 ### 4.2. Phân hệ Frontend (Flutter 3.x / Dart 3.x)
 - Lệnh: `flutter test test/dashboard_test.dart test/admin_pages_test.dart test/admin_shell_pages_test.dart test/auth_onboarding_test.dart test/dashboard_automation_reconciliation_test.dart`
-- **Kết quả:** `00:04 +70: All tests passed!` (70 tests passed, 0 failures, 0 errors).
+- **Chi tiết phân bổ test methods:**
+  - `test/dashboard_automation_reconciliation_test.dart`: 11 tests passed (Mới)
+  - `test/dashboard_test.dart`: 14 tests passed (Hồi quy)
+  - `test/admin_pages_test.dart`: 17 tests passed (Hồi quy)
+  - `test/admin_shell_pages_test.dart`: 8 tests passed (Hồi quy)
+  - `test/auth_onboarding_test.dart`: 20 tests passed (Hồi quy: gồm 6 tests điều hướng routing và 14 tests xác thực lỗi/onboarding/menu)
+- **Kết quả:** `00:04 +70: All tests passed!` (70/70 passed, 0 failures, 0 errors).
 - **Thời gian:** 4.200s.
 
 ---

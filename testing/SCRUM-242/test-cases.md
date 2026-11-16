@@ -273,7 +273,7 @@ Sau khi thực hiện rà soát độc lập đối chiếu giữa tài liệu v
 | Mã Test Case | Tên ca kiểm thử | Lý do phân loại BLOCKED | Điều kiện cần để thực thi trong tương lai |
 | :---: | :--- | :--- | :--- |
 | **TC-D501-LIVE-01** | Đối chiếu số liệu trực tiếp trên cơ sở dữ liệu live PostgreSQL/Supabase | Môi trường test local CI offline không mở port ra Supabase Cloud và không cấu hình credential live database. | Cần staging environment với live PostgreSQL instance hoặc Docker Testcontainers. |
-| **TC-D501-LIVE-02** | Xác thực chữ ký cryptographic của JWT thật qua Supabase GoTrue Auth | MockMvc sử dụng Spring Security test context (`jwt()`), chưa thực hiện bắt tay mạng xác thực khóa công khai RSA với Supabase Auth. | Cần GoTrue Auth server thật cấp token và public key endpoint. |
+| **TC-D501-LIVE-02** | Xác thực chữ ký cryptographic của JWT thật qua Supabase GoTrue Auth | MockMvc sử dụng Spring Security test context (`jwt()`), chưa thực hiện cryptographic JWT signature validation với live Supabase Auth server. | Cần live GoTrue Auth server cấp token và xác thực chữ ký thực tế. |
 | **TC-D501-LIVE-03** | Kiểm tra đa người thuê (Multi-tenant RLS Isolation) giữa hai tài khoản thật | MockMvc giả lập phản hồi của `DashboardService`, không truy vấn bảng dữ liệu thật có gắn chính sách RLS. | Cần tạo 2 tài khoản tenant thật trên database có RLS enabled và assert query isolation. |
 | **TC-D501-LIVE-04** | Tạo 15 bản ghi khảo sát thực tế và lưu vào bảng `survey_responses` | Frontend test sử dụng MockClient trả về JSON payload định sẵn, chưa qua API Gateway và tầng ghi dữ liệu PostgreSQL thật. | Cần End-to-End test suite chạy trên staging database tích hợp. |
 
@@ -287,7 +287,7 @@ Ngoài 17 kịch bản automation mới, toàn bộ **79 test methods có sẵn*
   - `DashboardRepositoryTest`: 3 methods (SQL mapping, xử lý tuần khuyết).
   - `GoogleMetricsSnapshotJobTest`: 4 methods (Cron job đồng bộ Google snapshot định kỳ).
 - **Frontend Regression (59 methods có sẵn):**
-  - `test/dashboard_test.dart`: 20 methods (Model parsing, định dạng tiền tố/hậu tố, Widget rendering).
-  - `test/admin_pages_test.dart`: 15 methods (Alert channels, billing, layout admin).
-  - `test/admin_shell_pages_test.dart`: 18 methods (Responsive desktop/mobile layout).
-  - `test/auth_onboarding_test.dart`: 6 methods (Auth flows, onboarding redirection).
+  - `test/dashboard_test.dart`: 14 methods (Model parsing, định dạng tiền tố/hậu tố, Widget rendering).
+  - `test/admin_pages_test.dart`: 17 methods (Alert channels, billing, layout admin).
+  - `test/admin_shell_pages_test.dart`: 8 methods (Responsive desktop/mobile layout).
+  - `test/auth_onboarding_test.dart`: 20 methods (trong đó nhóm 'điều hướng' gồm 6 methods router guards kiểm tra chuyển hướng Dashboard; 14 methods kiểm tra thông báo lỗi auth, validation form và admin menu). Tổng số test methods của file khi thực thi bằng Flutter Test là 20 tests.

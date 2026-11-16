@@ -64,7 +64,7 @@ Hạ tầng kiểm thử tự động của SCRUM-242 được thiết kế theo
 3. **Tầng Hồi quy (Regression Suite):** 79 test methods có sẵn (20 backend + 59 frontend) được tái thẩm định và đạt 100% PASS.
 
 ### 2.2. Khoảng trống kiểm thử (Gaps & Limitations)
-- **Live Supabase GoTrue Auth:** Chưa kiểm tra quá trình giải mã và kiểm tra chữ ký số công khai với auth server thật.
+- **Live Supabase GoTrue Auth:** Chưa thực hiện cryptographic JWT signature validation với live Supabase Auth server thật.
 - **Live PostgreSQL Data Persistence:** Dữ liệu khảo sát chưa được insert thực tế vào bảng `survey_responses` trên cloud database.
 - **Row Level Security (RLS) Isolation:** Chưa kiểm tra phân lập dữ liệu đa người thuê giữa hai business tài khoản thật trên live database.
 

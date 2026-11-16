@@ -284,6 +284,11 @@ flutter test test/dashboard_automation_reconciliation_test.dart
 Set-Location -Path "C:\Users\dnccr\OneDrive\Desktop\New folder\CX-SHIELD-GIT\backend"
 .\mvnw.cmd test '-Dtest=DashboardServiceTest,DashboardRepositoryTest,GoogleMetricsSnapshotJobTest,DashboardControllerSecurityTest'
 ```
+*Phân bổ test methods thực tế:*
+- `DashboardControllerSecurityTest.java`: 6 tests (Mới)
+- `DashboardServiceTest.java`: 13 tests (Hồi quy)
+- `DashboardRepositoryTest.java`: 3 tests (Hồi quy)
+- `GoogleMetricsSnapshotJobTest.java`: 4 tests (Hồi quy)
 *Kết quả ghi nhận: `Tests run: 26, Failures: 0, Errors: 0, Skipped: 0 - BUILD SUCCESS` trong **9.366s**.*
 
 #### Chạy Toàn bộ 70 Frontend Dashboard Tests (11 mới + 59 cũ):
@@ -291,6 +296,12 @@ Set-Location -Path "C:\Users\dnccr\OneDrive\Desktop\New folder\CX-SHIELD-GIT\bac
 Set-Location -Path "C:\Users\dnccr\OneDrive\Desktop\New folder\CX-SHIELD-GIT\frontend"
 flutter test test/dashboard_test.dart test/admin_pages_test.dart test/admin_shell_pages_test.dart test/auth_onboarding_test.dart test/dashboard_automation_reconciliation_test.dart
 ```
+*Phân bổ test methods thực tế:*
+- `test/dashboard_automation_reconciliation_test.dart`: 11 tests (Mới)
+- `test/dashboard_test.dart`: 14 tests (Hồi quy)
+- `test/admin_pages_test.dart`: 17 tests (Hồi quy)
+- `test/admin_shell_pages_test.dart`: 8 tests (Hồi quy)
+- `test/auth_onboarding_test.dart`: 20 tests (Hồi quy: 6 tests routing/guards + 14 tests error/validation/menu)
 *Kết quả ghi nhận: `00:04 +70: All tests passed!` trong **4.200s**.*
 
 > [!NOTE]
