@@ -82,6 +82,33 @@ class SurveyApiService {
     );
   }
 
+  /// E1.3: Lấy danh sách chủ đề góp ý gợi ý (Feedback Topics)
+  Future<List<Map<String, dynamic>>> getFeedbackTopics() async {
+    final url = Uri.parse('${ApiConstants.feedbackEndpoint}/topics');
+    try {
+      final response = await _client.get(url, headers: {
+        'Accept': 'application/json',
+      }).timeout(ApiConstants.timeout);
+
+      if (response.statusCode == 200) {
+        final decoded = json.decode(utf8.decode(response.bodyBytes));
+        if (decoded['success'] == true && decoded['data'] is List) {
+          return (decoded['data'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        }
+      }
+    } catch (_) {
+      // Fallback
+    }
+
+    return const [
+      {'id': 'e1eebc99-9c0b-4ef8-bb6d-6bb9bd380001', 'name': 'Món ăn / Đồ uống'},
+      {'id': 'e1eebc99-9c0b-4ef8-bb6d-6bb9bd380002', 'name': 'Thái độ phục vụ'},
+      {'id': 'e1eebc99-9c0b-4ef8-bb6d-6bb9bd380003', 'name': 'Thời gian chờ món'},
+      {'id': 'e1eebc99-9c0b-4ef8-bb6d-6bb9bd380004', 'name': 'Không gian & Vệ sinh'},
+      {'id': 'e1eebc99-9c0b-4ef8-bb6d-6bb9bd380005', 'name': 'Giá cả & Hóa đơn'},
+    ];
+  }
+
   /// E1.3: Gửi form góp ý riêng nội bộ tới quản lý
   Future<FeedbackResponseModel> submitFeedback({
     required String responseId,
@@ -89,6 +116,7 @@ class SurveyApiService {
     String? customerPhone,
     required bool consentToContact,
     bool isUrgentCallback = false,
+    List<String>? topicIds,
   }) async {
     final url = Uri.parse(ApiConstants.feedbackEndpoint);
     final body = json.encode({
@@ -97,6 +125,7 @@ class SurveyApiService {
       'customerPhone': (customerPhone != null && customerPhone.trim().isNotEmpty) ? customerPhone.trim() : null,
       'consentToContact': consentToContact,
       'isUrgentCallback': isUrgentCallback,
+      if (topicIds != null && topicIds.isNotEmpty) 'topicIds': topicIds,
     });
 
     try {

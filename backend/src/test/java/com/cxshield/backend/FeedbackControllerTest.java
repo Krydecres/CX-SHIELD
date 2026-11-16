@@ -6,10 +6,12 @@ import com.cxshield.backend.dto.FeedbackRequestDto;
 import com.cxshield.backend.dto.FeedbackResponseDto;
 import com.cxshield.backend.entity.Feedback;
 import com.cxshield.backend.entity.FeedbackTopic;
+import com.cxshield.backend.entity.FeedbackTopicLink;
 import com.cxshield.backend.entity.SurveyResponse;
 import com.cxshield.backend.entity.SurveySession;
 import com.cxshield.backend.event.FeedbackCreatedEvent;
 import com.cxshield.backend.repository.FeedbackRepository;
+import com.cxshield.backend.repository.FeedbackTopicLinkRepository;
 import com.cxshield.backend.repository.FeedbackTopicRepository;
 import com.cxshield.backend.repository.SurveyResponseRepository;
 import com.cxshield.backend.repository.SurveySessionRepository;
@@ -39,6 +41,7 @@ class FeedbackControllerTest {
 
     private SupabaseAdminClient supabase;
     private FeedbackRepository feedbackRepository;
+    private FeedbackTopicLinkRepository feedbackTopicLinkRepository;
     private SurveyResponseRepository surveyResponseRepository;
     private SurveySessionRepository surveySessionRepository;
     private FeedbackService feedbackService;
@@ -53,6 +56,7 @@ class FeedbackControllerTest {
     void setUp() {
         supabase = mock(SupabaseAdminClient.class);
         eventPublisher = mock(ApplicationEventPublisher.class);
+        feedbackTopicLinkRepository = new FeedbackTopicLinkRepository();
         feedbackStore.clear();
 
         // 1. Tạo phiên khảo sát có business_id và branch_id
@@ -102,6 +106,7 @@ class FeedbackControllerTest {
         feedbackService = new FeedbackServiceImpl(
                 feedbackRepository,
                 feedbackTopicRepository,
+                feedbackTopicLinkRepository,
                 surveyResponseRepository,
                 surveySessionRepository,
                 eventPublisher
@@ -219,5 +224,50 @@ class FeedbackControllerTest {
         assertTrue(response.isSuccess());
         assertNotNull(response.getData());
         assertFalse(response.getData().isEmpty());
+    }
+
+    @Test
+    @DisplayName("E1.3: Gửi góp ý kèm chủ đề liên kết (feedback_topic_links)")
+    void testSubmitFeedbackWithTopicLinks() {
+        UUID topic1 = UUID.fromString("e1eebc99-9c0b-4ef8-bb6d-6bb9bd380001");
+        UUID topic2 = UUID.fromString("e1eebc99-9c0b-4ef8-bb6d-6bb9bd380002");
+
+        FeedbackRequestDto dto = new FeedbackRequestDto(
+                testResponseId,
+                "Món ăn nguội và nhân viên chưa nhiệt tình",
+                "0901234567",
+                true
+        );
+        dto.setTopicIds(List.of(topic1, topic2));
+
+        ApiResponse<FeedbackResponseDto> response = feedbackController.submitFeedback(dto);
+        assertTrue(response.isSuccess());
+
+        FeedbackResponseDto data = response.getData();
+        assertNotNull(data);
+        assertEquals(2, data.getTopicIds().size());
+        assertTrue(data.getTopicNames().contains("Món ăn / Đồ uống"));
+        assertTrue(data.getTopicNames().contains("Thái độ phục vụ"));
+
+        // Kiểm tra lưu vào repository liên kết chủ đề
+        List<FeedbackTopicLink> links = feedbackTopicLinkRepository.findByFeedbackId(data.getFeedbackId());
+        assertEquals(2, links.size());
+        assertEquals("CUSTOMER_SELECT", links.get(0).getSource());
+    }
+
+    @Test
+    @DisplayName("E1.3: Nội dung ngắn dưới 3 ký tự -> Báo lỗi")
+    void testCommentTooShort() {
+        FeedbackRequestDto dto = new FeedbackRequestDto(
+                testResponseId,
+                "ab",
+                "0901234567",
+                true
+        );
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
+            feedbackController.submitFeedback(dto);
+        });
+        assertTrue(ex.getMessage().contains("tối thiểu 3 ký tự"));
     }
 }

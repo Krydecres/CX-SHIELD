@@ -37,5 +37,10 @@ public class FeedbackTopicRepository {
         }
         return list;
     }
+
+    public java.util.Optional<FeedbackTopic> findById(UUID id) {
+        if (id == null) return java.util.Optional.empty();
+        return java.util.Optional.ofNullable(store.get(id));
+    }
 }
 
