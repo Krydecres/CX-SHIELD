@@ -1,14 +1,16 @@
-# TEST CASES: SCRUM-225 - Kiểm thử mã nguồn từ khóa gợi ý và ngưỡng chia luồng
+# TEST CASES: SCRUM-225 – Kiểm thử mã nguồn từ khóa gợi ý và ngưỡng chia luồng
 
 - **Người thực hiện:** Long Quốc Cường (Cường 032)
-- **Mã Task Jira:** SCRUM-225
-- **Đối tượng kiểm thử:** Backend Controller & Service quản lý `review_keywords` và `routing_rules`
+- **Mã Task Jira:** SCRUM-225 (Story cha: SCRUM-133 – E4.3)
+- **Task code phụ thuộc:** `SCRUM-212`
+- **Trạng thái thực thi:** **BLOCKED** (Mã nguồn chức năng E4.3 chưa được triển khai trên nhánh làm việc)
 
-## Danh sách Kịch bản Kiểm thử (White-box & Security)
+## Danh sách Kịch bản Kiểm thử Mã nguồn (White-box & Security)
 
-| Mã TC | Tên Kịch bản | Các bước thực hiện | Kết quả mong đợi | Trạng thái |
+| Mã TC | Tên kịch bản | Đối tượng / Điều kiện kiểm tra | Kết quả mong đợi | Trạng thái |
 | :---: | :--- | :--- | :--- | :---: |
-| **TC-225-01** | Kiểm tra API CRUD bộ từ khóa | Gọi API thêm/sửa/xóa từ khóa theo ngành hàng | Database cập nhật bảng `review_keywords` chính xác | **PASS** |
-| **TC-225-02** | Validation ngưỡng chia luồng cảm xúc | Đặt ngưỡng chia luồng `minPositiveStars = 4` | Hệ thống lưu cấu hình và áp dụng chính xác cho logic khảo sát | **PASS** |
-| **TC-225-03** | Phân quyền truy cập theo cơ sở/chi nhánh | Đăng nhập tài khoản Manager chi nhánh A và truy cập cấu hình chi nhánh B | Server trả về lỗi `403 Forbidden` | **PASS** |
-| **TC-225-04** | Xử lý khi chưa có từ khóa thiết lập | Gọi API lấy câu gợi ý khi bảng từ khóa rỗng | Server trả về danh sách mặc định hoặc mảng rỗng, không sập server | **PASS** |
+| **TC-225-01** | Kiểm tra logic CRUD từ khóa gợi ý theo ngành (`review_keywords`) | Controller / Service / Repository quản lý `review_keywords` theo ngành hàng (Nha khoa, Spa, F&B…) | Hỗ trợ đầy đủ thêm / sửa / xóa từ khóa theo cơ sở và ngành hàng | **BLOCKED** |
+| **TC-225-02** | Kiểm tra hợp lệ ngưỡng chia luồng (`routing_rules`) & giá trị mặc định | Cấu hình ngưỡng chia luồng trong `routing_rules` và nhánh mặc định | Mặc định `4–5 sao → Google` và `1–3 sao → góp ý nội bộ`; từ chối ngưỡng ngoài khoảng `1..5` | **BLOCKED** |
+| **TC-225-03** | Kiểm tra áp dụng ngưỡng chia luồng động trong luồng khảo sát | Hàm `SurveyServiceImpl.submitRating()` đọc ngưỡng từ `routing_rules` | Điều hướng `M1-02` / `M1-04` theo ngưỡng động đã cấu hình cho từng chi nhánh | **BLOCKED** |
+| **TC-225-04** | Kiểm tra phân quyền truy cập theo cơ sở trên `review_keywords` & `routing_rules` | Chính sách RLS Supabase và kiểm tra quyền tầng Service giữa các cơ sở khác nhau | Tài khoản thuộc cơ sở A không đọc/sửa được cấu hình của cơ sở B (`403 Forbidden` / RLS chặn) | **BLOCKED** |
+| **TC-225-05** | Kiểm tra xử lý lỗi khi thiếu từ khóa / chưa cấu hình quy tắc & Unit Test task code | Gọi API khi `review_keywords` rỗng và chạy bộ Unit Test của `SCRUM-212` | Trả về danh sách rỗng hoặc gợi ý mặc định an toàn; 100% Unit Test của `SCRUM-212` chạy xanh | **BLOCKED** |
