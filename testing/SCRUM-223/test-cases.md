@@ -1,16 +1,16 @@
-# TEST CASES: SCRUM-233 – Kiểm thử tự động luồng gửi cảnh báo
+# TEST CASES: SCRUM-223 – Kiểm thử chức năng màn 4–5 sao và chuyển sang Google Maps
 
 - **Người thực hiện:** Long Quốc Cường (Cường 032)
-- **Mã Task Jira:** SCRUM-233 (Story cha: SCRUM-127 – E2.2)
-- **Test Script:** `e2e/alert_dispatch_e22.spec.js`
-- **Đối tượng kiểm thử:** Luồng tự động E2E góp ý dưới 4 sao (`POST /api/v1/feedbacks`) → kích hoạt gửi cảnh báo (`AlertDispatcher`) → lưu `notifications`, kết hợp smoke test và kiểm thử hồi quy luồng góp ý `E1.3`
+- **Mã Task Jira:** SCRUM-223 (Story cha: SCRUM-123 – E1.2)
+- **Đối tượng kiểm thử:** Màn hình Frontend `M1-02` (`frontend/lib/screens/m1_02_google_review_screen.dart`)
+- **Môi trường kiểm thử:** Thiết bị thật Samsung Galaxy A07 (Android 16) & Flutter Widget Test (`frontend/test/m1_02_google_review_screen_test.dart`)
 
-## Danh sách Kịch bản Kiểm thử Tự động (Automation E2E & Regression)
+## Danh sách Kịch bản Kiểm thử Chức năng (Black-box & Device Test)
 
-| Mã TC | Tên kịch bản | Luồng thực thi tự động | Kết quả mong đợi | Trạng thái |
+| Mã TC | Tên kịch bản | Các bước thực hiện | Kết quả mong đợi | Trạng thái |
 | :---: | :--- | :--- | :--- | :---: |
-| **TC-233-01** | Gửi góp ý 2 sao kích hoạt luồng cảnh báo trong vòng 10 giây (`SLA < 10s`) | Quét QR `MC-B04` → chấm `2 sao` → gửi góp ý nội bộ kèm SĐT và `consentToContact = true` qua `POST /api/v1/feedbacks`, đo tổng thời gian phản hồi | HTTP `200 OK`, `status = "NEW"`, `targetScreen = "M1-06"`, thời gian xử lý dưới `10.000ms` (thực tế: `125ms`) | **PASS** |
-| **TC-233-02** | Gửi góp ý khẩn cấp 1 sao & xác minh hợp đồng lưu `notifications` (`SENT` / `FAILED` mock) | Chấm `1 sao` (`allowUrgentCall = true`) → gửi góp ý khẩn cấp `urgentCallback = true`, đo thời gian kích hoạt và đối chiếu schema bản ghi `notifications` (dùng dữ liệu giả lập, không hardcode secrets) | HTTP `200 OK` trong `15ms` (`< 10.000ms`); cấu trúc bản ghi `SENT` có `sent_at`, nhánh `FAILED` ghi `error_message <= 300` ký tự | **PASS** |
-| **TC-233-03** | Kiểm thử hồi quy `E1.3` – Gửi góp ý 3 sao không để lại SĐT | Chấm `3 sao` (`NEGATIVE` → `M1-04`) → gửi góp ý với `consentToContact = false` và không nhập SĐT | HTTP `200 OK`, hệ thống lưu góp ý thành công và điều hướng sang `M1-06` | **PASS** |
-| **TC-233-04** | Kiểm thử hồi quy `E1.3` – Chặn nội dung quá ngắn (`< 3` ký tự) và SĐT sai định dạng | Gửi `commentText = "Tệ"` (2 ký tự) và gửi SĐT `"12345"` sai định dạng số Việt Nam tới `POST /api/v1/feedbacks` | Server từ chối cả hai yêu cầu với mã HTTP `400 Bad Request` | **PASS** |
-| **TC-233-05** | Smoke test hồi quy – Đánh giá 5 sao điều hướng `M1-02` (`POSITIVE`) | Quét QR `MC-B04` và gửi đánh giá `5 sao` qua `POST /api/v1/surveys/rate` | HTTP `200 OK`, `sentimentGroup = "POSITIVE"`, `targetScreen = "M1-02"`, `allowUrgentCall = false` | **PASS** |
+| **TC-223-01** | Chọn 4 sao hoặc 5 sao điều hướng đúng màn `M1-02` | 1. Mở khảo sát QR `MC-B04` tại `M1-01`.<br>2. Chạm chọn 4 sao (và lặp lại với 5 sao). | Chuyển sang màn `M1-02: Đánh giá Google Maps`, hiển thị đúng tiêu đề `"Cảm ơn bạn đã chấm 4/5 sao!"` và tên cơ sở. | **PASS** |
+| **TC-223-02** | Hiển thị câu gợi ý & tuân thủ chống Review Gating | Quan sát toàn bộ giao diện `M1-02` sau khi chọn 5 sao. | Hiển thị khung `"Gợi ý nhận xét (tự động copy)"`; không chọn sẵn sao, không tự điền chữ vào URL, không hiển thị voucher/quà tặng gắn với 5 sao. | **PASS** |
+| **TC-223-03** | Sao chép câu gợi ý vào bộ nhớ tạm (Clipboard) | Chạm nút `"Sao chép"` trên khung gợi ý nhận xét. | Lưu đúng nội dung gợi ý vào Clipboard, hiện SnackBar `"Đã sao chép câu gợi ý vào bộ nhớ tạm!"` và đổi nhãn nút thành `"Đã chép"`. | **PASS** |
+| **TC-223-04** | Thao tác nút `"Đăng Đánh Giá Lên Google Maps"` | Chạm nút `"Đăng Đánh Giá Lên Google Maps"` trên màn `M1-02`. | Tự động sao chép câu gợi ý vào Clipboard và bật hộp thoại `"Mở Google Maps"` với nút xác nhận `"Đã hiểu & Tiếp tục"`. | **PASS** |
+| **TC-223-05** | Kiểm thử hồi quy nút `"← Trở lại khảo sát"` trên `M1-02` | Tại màn `M1-02` trên Samsung Galaxy A07 (Android 16), cuộn xuống dưới và chạm `"← Trở lại khảo sát"` hoặc vuốt Back. | Đóng màn `M1-02` và quay về màn chọn sao `M1-01` để khách có thể đánh giá lại. | **FAIL** |
