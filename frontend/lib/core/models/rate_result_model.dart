@@ -10,6 +10,8 @@ class RateResultModel {
   final String googleReviewUrl;
   final List<String> suggestedKeywords;
   final bool publicReviewEnabled;
+  final String? reviewDirectUrl;
+  final String? placeName;
 
   const RateResultModel({
     required this.responseId,
@@ -23,6 +25,8 @@ class RateResultModel {
     this.googleReviewUrl = 'https://maps.google.com',
     this.suggestedKeywords = const [],
     this.publicReviewEnabled = true,
+    this.reviewDirectUrl,
+    this.placeName,
   });
 
   factory RateResultModel.fromJson(Map<String, dynamic> json) {
@@ -42,6 +46,8 @@ class RateResultModel {
       googleReviewUrl: json['googleReviewUrl'] as String? ?? 'https://maps.google.com',
       suggestedKeywords: keywords,
       publicReviewEnabled: json['publicReviewEnabled'] as bool? ?? true,
+      reviewDirectUrl: json['reviewDirectUrl'] as String?,
+      placeName: json['placeName'] as String?,
     );
   }
 }

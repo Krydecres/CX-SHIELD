@@ -8,6 +8,7 @@ class ApiConstants {
   static const String surveyQrEndpoint = '$baseUrl/surveys/qr';
   static const String surveyRateEndpoint = '$baseUrl/surveys/rate';
   static const String feedbackEndpoint = '$baseUrl/feedbacks';
+  static const String googleRedirectEndpoint = '$baseUrl/surveys/google-redirect';
   static const String publicReviewBypassEndpoint = '$baseUrl/surveys/public-review';
   static const Duration timeout = Duration(milliseconds: 3000);
 }
