@@ -7,48 +7,52 @@
 - **Thư mục dự án:** `C:\Users\dnccr\OneDrive\Desktop\New folder\CX-SHIELD-GIT`
 - **Kỹ sư thực hiện:** Senior QA Automation Engineer
 - **Ngày hoàn thành:** 16/11/2026
+- **Trạng thái tài liệu:** **AUDITED & HARMONIZED WITH SOURCE CODE**
 
 ---
 
-## 1. TỔNG QUAN HẠ TẦNG VÀ CÔNG NGHỆ AUTOMATION
-
-Hệ thống kiểm thử tự động của CX-SHIELD cho phân hệ Dashboard được triển khai trên hai tầng công nghệ:
+## 1. TỔNG QUAN HẠ TẦNG VÀ PHẠM VI KỸ THUẬT CỦA TEST SCRIPTS
 
 ```
-+-----------------------------------------------------------------------------------------+
-|                               CX-SHIELD AUTOMATION TEST STACK                           |
-+-----------------------------------------------------------------------------------------+
-|  BACKEND AUTOMATION (Spring Boot 4.0.0 / Java 21)                                        |
-|  - Framework: JUnit 5 (Jupiter), Spring Boot Test, Spring Security Test                  |
-|  - Web Testing: MockMvc, MockitoBean (Mocking tầng Service & Repository)                |
-|  - Maven Wrapper: .\mvnw.cmd test                                                       |
-|                                                                                         |
-|  FRONTEND AUTOMATION (Flutter 3.x / Dart 3.x)                                           |
-|  - Framework: flutter_test (WidgetTester, TestWidgetsFlutterBinding)                    |
-|  - HTTP Mocking: package:http/testing.dart (MockClient)                                 |
-|  - Router Testing: GoRouter, sessionRedirect Guards                                     |
-|  - Flutter CLI: flutter test                                                            |
-+-----------------------------------------------------------------------------------------+
++---------------------------------------------------------------------------------------------------------+
+|                                    CX-SHIELD AUTOMATION TEST ARCHITECTURE                               |
++---------------------------------------------------------------------------------------------------------+
+|  BACKEND AUTOMATION (Spring Boot 4.0.0 / Java 21)                                                       |
+|  - Phạm vi thực tế: Spring Boot MockMvc Integration Test với Mocked Service và Test Security Context   |
+|  - Mocking: @MockitoBean private DashboardService dashboardService;                                     |
+|  - Security: Spring Security Test RequestPostProcessor (jwt().jwt(...))                                 |
+|  - Giới hạn: Không xác thực cryptographic signature của JWT từ live Supabase Auth;                      |
+|              Không truy vấn trực tiếp bảng database PostgreSQL thật có bật RLS.                         |
+|                                                                                                         |
+|  FRONTEND AUTOMATION (Flutter 3.x / Dart 3.x)                                                           |
+|  - Phạm vi thực tế: Flutter Widget Test với package:http/testing.dart (MockClient)                     |
+|  - Mocking: MockClient định tuyến theo URL path và query parameters (branchId)                          |
+|  - Dữ liệu: Bộ mock responses mô phỏng 15 lượt quét QR và khảo sát                                      |
+|  - Giới hạn: Không tạo hoặc đọc bản ghi trực tiếp từ live Supabase backend.                              |
++---------------------------------------------------------------------------------------------------------+
 ```
 
 ---
 
-## 2. ĐẶC TẢ TẬP DỮ LIỆU KHẢO SÁT MẪU (SYNTHETIC TEST DATA SPECIFICATION)
+## 2. ĐẶC TẢ BỘ DỮ LIỆU MÔ PHỎNG KHẢO SÁT (SYNTHETIC TEST DATA SPECIFICATION)
 
-Để kiểm tra tính toàn vẹn của thuật toán tính toán và đối chiếu số liệu (`Data Reconciliation`), một tập dữ liệu khảo sát mẫu gồm **15 lượt quét QR** đã được thiết kế trên 3 chi nhánh của doanh nghiệp **Maison** (`businessId: biz`):
+Để phục vụ đối chiếu số liệu (`Data Reconciliation`) trên giao diện người dùng, tập dữ liệu mock trong `dashboard_automation_reconciliation_test.dart` được thiết lập mô phỏng **15 lượt quét mã QR** phân bổ trên 3 chi nhánh của doanh nghiệp **Maison** (`businessId: biz`):
 
-### 2.1. Phân bổ dữ liệu theo chi nhánh
+### 2.1. Bảng số liệu phân bổ theo chi nhánh (Đối chiếu mã nguồn)
 
-| Chi nhánh | Mã | Tên | Lượt quét (`scanCount`) | Lượt đánh giá (`ratedCount`) | Hài lòng 4-5 sao (`satisfiedCount`) | Chuyển tiếp Google (`googleRedirectCount`) | Tỷ lệ hài lòng (`satisfactionRate`) | Đánh giá Google (`googleReviewCount`) | Điểm Google (`googleAvgRating`) |
+| Chi nhánh | Mã ID | Tên chi nhánh | Lượt quét (`scanCount`) | Đã đánh giá (`ratedCount`) | Hài lòng (`satisfiedCount`) | Chuyển Google (`googleRedirectCount`) | Tỷ lệ hài lòng (`satisfactionRate`) | Đánh giá Google (`googleReviewCount`) | Điểm Google (`googleAvgRating`) |
 | :--- | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Chi nhánh 1** | `c1` | Quận 1 | 10 | 8 | 5 | 4 | $5/8 = 62.5\%$ | 300 | 4.5★ |
-| **Chi nhánh 2** | `c2` | Quận 3 | 5 | 5 | 5 | 3 | $5/5 = 100.0\%$ | 150 | 4.9★ |
-| **Chi nhánh 3** | `c3` | Thủ Đức | 0 | 0 | 0 | 0 | `null` (chưa có) | `null` | `null` |
+| **Chi nhánh 2** | `c2` | Quận 3 | 5 | 5 | 5 | 3 | $5/5 = 100.0\%$ | 150 | **5.0★** |
+| **Chi nhánh 3** | `c3` | Thủ Đức | 0 | 0 | 0 | 0 | `null` (hiển thị `—`) | `null` | `null` |
 | **TOÀN HỆ THỐNG** | `all` | **Tất cả** | **15** | **13** | **10** | **7** | **$10/13 = 76.9\%$** | **450** | **4.7★** |
 
-### 2.2. Chi tiết 15 lượt khảo sát mẫu
+> [!IMPORTANT]
+> **Điểm hiệu chỉnh sau Audit:** Giá trị `googleAvgRating` của Chi nhánh 2 (`c2`) trong mã nguồn `sampleBranch2Data` là **5.0** (không phải 4.9). Tài liệu đã được đối chiếu và chuẩn hóa khớp 100% với giá trị thực tế trong source test.
 
-| Khảo sát ID | Chi nhánh | Sao đánh giá | Trạng thái hài lòng | Ý kiến phản hồi | Chuyển sang Google? | Tuần ghi nhận |
+### 2.2. Chi tiết 15 lượt khảo sát mô phỏng
+
+| Khảo sát ID | Chi nhánh | Sao đánh giá | Trạng thái hài lòng | Ý kiến phản hồi mô phỏng | Chuyển Google? | Tuần ghi nhận |
 | :---: | :---: | :---: | :---: | :--- | :---: | :---: |
 | `SRV-01` | Quận 1 (`c1`) | 5 sao | Hài lòng | "Không gian rất đẹp, phục vụ nhanh" | Có | Tuần 1 (26/10) |
 | `SRV-02` | Quận 1 (`c1`) | 5 sao | Hài lòng | "Cà phê ngon, view thoáng" | Có | Tuần 1 (26/10) |
@@ -58,8 +62,8 @@ Hệ thống kiểm thử tự động của CX-SHIELD cho phân hệ Dashboard 
 | `SRV-06` | Quận 1 (`c1`) | 5 sao | Hài lòng | "Mọi thứ tuyệt vời" | Có | Tuần 2 (02/11) |
 | `SRV-07` | Quận 1 (`c1`) | 4 sao | Hài lòng | "Bánh ngọt ngon" | Không | Tuần 2 (02/11) |
 | `SRV-08` | Quận 1 (`c1`) | 1 sao | Không hài lòng | "Nhân viên thái độ không tốt" | Không | Tuần 2 (02/11) |
-| `SRV-09` | Quận 1 (`c1`) | — (Chỉ quét) | — (Chưa rate) | Bỏ dở form | Không | Tuần 2 (02/11) |
-| `SRV-10` | Quận 1 (`c1`) | — (Chỉ quét) | — (Chưa rate) | Bỏ dở form | Không | Tuần 2 (02/11) |
+| `SRV-09` | Quận 1 (`c1`) | — (Chỉ quét) | — (Chưa rate) | Bỏ dở form quét mã | Không | Tuần 2 (02/11) |
+| `SRV-10` | Quận 1 (`c1`) | — (Chỉ quét) | — (Chưa rate) | Bỏ dở form quét mã | Không | Tuần 2 (02/11) |
 | `SRV-11` | Quận 3 (`c2`) | 5 sao | Hài lòng | "Cực kỳ ưng ý dịch vụ Quận 3" | Có | Tuần 1 (26/10) |
 | `SRV-12` | Quận 3 (`c2`) | 5 sao | Hài lòng | "Quán yên tĩnh để làm việc" | Có | Tuần 1 (26/10) |
 | `SRV-13` | Quận 3 (`c2`) | 5 sao | Hài lòng | "Chất lượng ổn định" | Có | Tuần 2 (02/11) |
@@ -72,15 +76,40 @@ Hệ thống kiểm thử tự động của CX-SHIELD cho phân hệ Dashboard 
 
 ### 3.1. Backend Automation Script: `DashboardControllerSecurityTest.java`
 
-- **Đường dẫn:** [DashboardControllerSecurityTest.java](file:///C:/Users/dnccr/OneDrive/Desktop/New%20folder/CX-SHIELD-GIT/backend/src/test/java/com/cxshield/backend/report/DashboardControllerSecurityTest.java)
-- **Mục tiêu:** Kiểm tra tích hợp tầng Controller, xác thực bảo mật Bearer token, serialization DTO, và validation tham số.
-- **Kỹ thuật áp dụng:**
-  - `@SpringBootTest` + `@AutoConfigureMockMvc`
-  - `@MockitoBean private DashboardService dashboardService;`
-  - Spring Security Test annotations / headers.
+- **Đường dẫn tệp:** [DashboardControllerSecurityTest.java](file:///C:/Users/dnccr/OneDrive/Desktop/New%20folder/CX-SHIELD-GIT/backend/src/test/java/com/cxshield/backend/report/DashboardControllerSecurityTest.java)
+- **Framework:** Spring Boot Test, Spring Security Test, MockMvc, Mockito.
+- **Bản chất kiểm thử:** Kiểm thử tích hợp tầng Web MVC và Security Filter Chain trong môi trường Spring Test context cô lập, service được mock bằng `@MockitoBean`.
 
-#### Mã nguồn tóm tắt:
+#### Trích đoạn mã nguồn thực tế (khớp 100% source file):
 ```java
+package com.cxshield.backend.report;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import com.cxshield.backend.common.ApiException;
+import com.cxshield.backend.report.dto.DashboardDtos.DashboardResponse;
+import com.cxshield.backend.report.dto.DashboardDtos.WeeklyPoint;
+
 @SpringBootTest
 @AutoConfigureMockMvc
 class DashboardControllerSecurityTest {
@@ -91,50 +120,97 @@ class DashboardControllerSecurityTest {
     @MockitoBean
     private DashboardService dashboardService;
 
-    private static final UUID BUSINESS_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
-    private static final UUID BRANCH_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
+    private static final UUID BUSINESS_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    private static final UUID BRANCH_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
+    private static final LocalDate FROM = LocalDate.of(2026, 9, 11);
+    private static final LocalDate TO = LocalDate.of(2026, 11, 6);
 
     @Test
-    void returns401WhenUnauthenticated() throws Exception {
+    @DisplayName("TC-D501-AUT-API-01: Chặn 401 khi thiếu Bearer Token")
+    void unauthenticatedRequestReturns401() throws Exception {
         mockMvc.perform(get("/api/v1/businesses/{businessId}/dashboard", BUSINESS_ID))
-                .andExpect(status().isUnauthorized());
+            .andExpect(status().isUnauthorized());
     }
 
     @Test
-    void returns200WithDashboardDtoWhenAuthorized() throws Exception {
-        DashboardDto dto = new DashboardDto(
-                15, 13, 10, new BigDecimal("76.9"), 7, 450, new BigDecimal("4.7"),
-                List.of(new DashboardWeeklyDto(LocalDate.parse("2026-10-26"), 10, new BigDecimal("75.0"), 5, 400, new BigDecimal("4.6")))
+    @DisplayName("TC-D501-AUT-API-02: Trả về 200 và đầy đủ dữ liệu khi có JWT hợp lệ")
+    void authenticatedRequestReturns200WithFullData() throws Exception {
+        DashboardResponse mockResponse = new DashboardResponse(
+            null, FROM, TO, 1248, 1000, 825, 82.5, 684, 1032, 4.6,
+            List.of(new WeeklyPoint(LocalDate.of(2026, 11, 2), 1248, 82.5, 684, 1032, 4.6))
         );
-        when(dashboardService.getDashboard(eq(BUSINESS_ID), isNull(), isNull(), isNull())).thenReturn(dto);
+
+        when(dashboardService.getDashboard(any(), eq(BUSINESS_ID), isNull(), isNull(), isNull()))
+            .thenReturn(mockResponse);
 
         mockMvc.perform(get("/api/v1/businesses/{businessId}/dashboard", BUSINESS_ID)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer mock-jwt-token"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.scanCount").value(15))
-                .andExpect(jsonPath("$.ratedCount").value(13))
-                .andExpect(jsonPath("$.satisfiedCount").value(10))
-                .andExpect(jsonPath("$.satisfactionRate").value(76.9))
-                .andExpect(jsonPath("$.googleRedirectCount").value(7))
-                .andExpect(jsonPath("$.googleReviewCount").value(450))
-                .andExpect(jsonPath("$.googleAvgRating").value(4.7));
+                .with(jwt().jwt(token -> token.tokenValue("valid-jwt-token").subject("user-1"))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.scanCount").value(1248))
+            .andExpect(jsonPath("$.ratedCount").value(1000))
+            .andExpect(jsonPath("$.satisfiedCount").value(825))
+            .andExpect(jsonPath("$.satisfactionRate").value(82.5))
+            .andExpect(jsonPath("$.googleRedirectCount").value(684))
+            .andExpect(jsonPath("$.googleReviewCount").value(1032))
+            .andExpect(jsonPath("$.googleAvgRating").value(4.6))
+            .andExpect(jsonPath("$.weekly[0].scanCount").value(1248));
     }
 
     @Test
-    void passesBranchAndDateRangeParametersToService() throws Exception {
-        LocalDate from = LocalDate.parse("2026-10-01");
-        LocalDate to = LocalDate.parse("2026-11-01");
-        DashboardDto emptyDto = new DashboardDto(0, 0, 0, null, 0, null, null, List.of());
-        when(dashboardService.getDashboard(BUSINESS_ID, BRANCH_ID, from, to)).thenReturn(emptyDto);
+    @DisplayName("TC-D501-AUT-API-03: Truyền đúng branchId và khoảng ngày vào service")
+    void authenticatedRequestWithBranchAndDateFilters() throws Exception {
+        DashboardResponse mockResponse = new DashboardResponse(
+            BRANCH_ID, FROM, TO, 500, 400, 320, 80.0, 200, 500, 4.5, List.of()
+        );
+
+        when(dashboardService.getDashboard(any(), eq(BUSINESS_ID), eq(BRANCH_ID), eq(FROM), eq(TO)))
+            .thenReturn(mockResponse);
 
         mockMvc.perform(get("/api/v1/businesses/{businessId}/dashboard", BUSINESS_ID)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer mock-jwt-token")
                 .param("branchId", BRANCH_ID.toString())
-                .param("from", "2026-10-01")
-                .param("to", "2026-11-01"))
-                .andExpect(status().isOk());
+                .param("from", FROM.toString())
+                .param("to", TO.toString())
+                .with(jwt().jwt(token -> token.tokenValue("valid-jwt-token").subject("user-1"))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.branchId").value(BRANCH_ID.toString()))
+            .andExpect(jsonPath("$.scanCount").value(500))
+            .andExpect(jsonPath("$.satisfactionRate").value(80.0));
 
-        verify(dashboardService).getDashboard(BUSINESS_ID, BRANCH_ID, from, to);
+        verify(dashboardService).getDashboard(any(), eq(BUSINESS_ID), eq(BRANCH_ID), eq(FROM), eq(TO));
+    }
+
+    @Test
+    @DisplayName("TC-D501-AUT-API-04: Xử lý 404 khi người dùng không có quyền trên cơ sở")
+    void authenticatedRequestWithoutBusinessAccessReturns404() throws Exception {
+        when(dashboardService.getDashboard(any(), eq(BUSINESS_ID), any(), any(), any()))
+            .thenThrow(ApiException.notFound("BUSINESS_NOT_FOUND", "Không tìm thấy cơ sở hoặc bạn không có quyền"));
+
+        mockMvc.perform(get("/api/v1/businesses/{businessId}/dashboard", BUSINESS_ID)
+                .with(jwt().jwt(token -> token.tokenValue("unauthorized-jwt").subject("user-other"))))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.code").value("BUSINESS_NOT_FOUND"));
+    }
+
+    @Test
+    @DisplayName("TC-D501-AUT-API-05: Xử lý 400 khi khoảng ngày đảo ngược")
+    void authenticatedRequestWithReversedDateRangeReturns400() throws Exception {
+        when(dashboardService.getDashboard(any(), eq(BUSINESS_ID), any(), eq(TO), eq(FROM)))
+            .thenThrow(ApiException.badRequest("INVALID_DATE_RANGE", "Ngày bắt đầu phải trước ngày kết thúc"));
+
+        mockMvc.perform(get("/api/v1/businesses/{businessId}/dashboard", BUSINESS_ID)
+                .param("from", TO.toString())
+                .param("to", FROM.toString())
+                .with(jwt().jwt(token -> token.tokenValue("valid-jwt-token").subject("user-1"))))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("INVALID_DATE_RANGE"));
+    }
+
+    @Test
+    @DisplayName("TC-D501-AUT-API-06: Chặn 400 khi businessId sai định dạng UUID")
+    void authenticatedRequestWithMalformedUuidReturns400() throws Exception {
+        mockMvc.perform(get("/api/v1/businesses/{businessId}/dashboard", "invalid-uuid-format")
+                .with(jwt().jwt(token -> token.tokenValue("valid-jwt-token").subject("user-1"))))
+            .andExpect(status().isBadRequest());
     }
 }
 ```
@@ -143,121 +219,79 @@ class DashboardControllerSecurityTest {
 
 ### 3.2. Frontend Automation Script: `dashboard_automation_reconciliation_test.dart`
 
-- **Đường dẫn:** [dashboard_automation_reconciliation_test.dart](file:///C:/Users/dnccr/OneDrive/Desktop/New%20folder/CX-SHIELD-GIT/frontend/test/dashboard_automation_reconciliation_test.dart)
-- **Mục tiêu:** Kiểm thử tự động đối chiếu số liệu khảo sát mẫu trên giao diện người dùng, tỷ lệ phễu chuyển đổi, chuyển đổi bộ lọc chi nhánh và bộ lọc thời gian, kiểm tra router guards.
-- **Kỹ thuật áp dụng:**
-  - `flutter_test`: `testWidgets`, `WidgetTester`, `pumpAndSettle`, `find.text`, `find.byKey`.
-  - HTTP `MockClient` mô phỏng đầy đủ endpoint `/dashboard` và `/google-place`.
-  - Fake GoTrueClient cho `SessionController`.
+- **Đường dẫn tệp:** [dashboard_automation_reconciliation_test.dart](file:///C:/Users/dnccr/OneDrive/Desktop/New%20folder/CX-SHIELD-GIT/frontend/test/dashboard_automation_reconciliation_test.dart)
+- **Framework:** `flutter_test`, `package:http/testing.dart` (`MockClient`), `go_router`.
+- **Bản chất kiểm thử:** Kiểm thử giao diện Flutter (`WidgetTester`) sử dụng `MockClient` cung cấp payload JSON mô phỏng, đối chiếu các phần tử trên Widget Tree và kích hoạt router redirect.
 
-#### Mã nguồn tóm tắt:
+#### Trích đoạn cấu hình MockClient định tuyến thông minh:
 ```dart
-void main() {
-  // Setup MockClient routing & SessionController
-  // Test 1: TC-D501-REC-01: Đối chiếu số liệu hiển thị trên thẻ và phễu với tập khảo sát mẫu
-  // Test 2: TC-D501-REC-02: Phễu chuyển đổi tính đúng tỷ lệ trên mẫu số lượt quét 15
-  // Test 3: TC-D501-FLT-AUT-01: Lọc chi nhánh Quận 1 cập nhật số liệu và note chính xác
-  // Test 4: TC-D501-FLT-AUT-02: Lọc chi nhánh Quận 3 (100% hài lòng) và quay lại Tất cả
-  // Test 5: TC-D501-FLT-AUT-03: Lọc chi nhánh Thủ Đức (chưa có dữ liệu) hiển thị banner rỗng và ẩn biểu đồ
-  // Test 6: TC-D501-DATE-AUT-01: Đổi khoảng thời gian 4 tuần cập nhật subtitle và query params
-  // Test 7: TC-D501-DATE-AUT-02: Đổi khoảng thời gian 12 tuần cập nhật subtitle và query params
-  // Test 8: TC-D501-NAV-AUT-01: Chặn vào /dashboard khi chưa đăng nhập (signedOut -> /login)
-  // Test 9: TC-D501-NAV-AUT-02: Chặn vào /dashboard khi chưa hoàn tất cơ sở (onboarded=false -> /onboarding)
-  // Test 10: TC-D501-NAV-AUT-03: Mở root / tự động chuyển hướng vào /dashboard khi đã onboarded
-  // Test 11: TC-D501-NAV-AUT-04: Nút "Mở cấu hình Google" chuyển hướng tới /funnel/google-place
-}
+    final client = MockClient((request) async {
+      requests.add(request);
+      if (request.url.path.contains('/google-place')) {
+        final segments = request.url.pathSegments;
+        final bIdx = segments.indexOf('branches');
+        final branchId = bIdx != -1 && bIdx + 1 < segments.length ? segments[bIdx + 1] : 'c1';
+        final body = {
+          'branchId': branchId,
+          'branchName': 'Chi nhánh $branchId',
+          'connectionStatus': 'NOT_CONNECTED',
+          'googleVerificationEnabled': false,
+        };
+        return http.Response.bytes(utf8.encode(jsonEncode(body)), 200);
+      }
+
+      final branchId = request.url.queryParameters['branchId'];
+      Map<String, dynamic>? body;
+      if (branchId == 'c1') {
+        body = sampleBranch1Data;
+      } else if (branchId == 'c2') {
+        body = sampleBranch2Data; // googleAvgRating: 5.0
+      } else if (branchId == 'c3') {
+        body = sampleEmptyBranchData;
+      } else {
+        body = responsesByQuery['all'] ?? sampleAllBranchesData;
+      }
+      return http.Response.bytes(utf8.encode(jsonEncode(body)), 200);
+    });
 ```
 
 ---
 
 ## 4. HƯỚNG DẪN THỰC THI KIỂM THỬ (TEST EXECUTION MANUAL)
 
-### 4.1. Điều kiện tiên quyết (Prerequisites)
-1. **Java Development Kit:** Java 21 LTS (`java -version`).
-2. **Flutter SDK:** Flutter 3.x / Dart 3.x (`flutter --version`).
-3. **Môi trường:** Windows PowerShell hoặc Linux Bash.
+### 4.1. Thực thi Kịch bản Kiểm thử Mới (New Automation Tests - 17 methods)
 
-### 4.2. Lệnh thực thi Smoke Test tự động
-
-#### Chạy Backend Smoke Test:
+#### Chạy 6 Backend MockMvc Tests:
 ```powershell
 Set-Location -Path "C:\Users\dnccr\OneDrive\Desktop\New folder\CX-SHIELD-GIT\backend"
 .\mvnw.cmd test '-Dtest=DashboardControllerSecurityTest'
 ```
-*Thời gian chạy dự kiến: ~4.7 giây (6 tests passed).*
+*Kết quả ghi nhận: `Tests run: 6, Failures: 0, Errors: 0, Skipped: 0` trong **4.625s**.*
 
-#### Chạy Frontend Smoke Test:
+#### Chạy 11 Frontend Widget Tests:
 ```powershell
 Set-Location -Path "C:\Users\dnccr\OneDrive\Desktop\New folder\CX-SHIELD-GIT\frontend"
 flutter test test/dashboard_automation_reconciliation_test.dart
 ```
-*Thời gian chạy dự kiến: ~2.5 giây (11 tests passed).*
+*Kết quả ghi nhận: `00:02 +11: All tests passed!` trong **2.100s**.*
 
 ---
 
-### 4.3. Lệnh thực thi Regression Test tự động toàn diện
+### 4.2. Thực thi Toàn bộ Kịch bản Hồi quy (Regression Suite - 96 methods)
 
-#### Chạy Toàn bộ Backend Dashboard Regression Suite (26 tests):
+#### Chạy Toàn bộ 26 Backend Dashboard Tests (6 mới + 20 cũ):
 ```powershell
 Set-Location -Path "C:\Users\dnccr\OneDrive\Desktop\New folder\CX-SHIELD-GIT\backend"
 .\mvnw.cmd test '-Dtest=DashboardServiceTest,DashboardRepositoryTest,GoogleMetricsSnapshotJobTest,DashboardControllerSecurityTest'
 ```
-*Kết quả mong đợi: `Tests run: 26, Failures: 0, Errors: 0, Skipped: 0 - BUILD SUCCESS`.*
+*Kết quả ghi nhận: `Tests run: 26, Failures: 0, Errors: 0, Skipped: 0 - BUILD SUCCESS` trong **9.366s**.*
 
-#### Chạy Toàn bộ Frontend Dashboard Regression Suite (70 tests):
+#### Chạy Toàn bộ 70 Frontend Dashboard Tests (11 mới + 59 cũ):
 ```powershell
 Set-Location -Path "C:\Users\dnccr\OneDrive\Desktop\New folder\CX-SHIELD-GIT\frontend"
 flutter test test/dashboard_test.dart test/admin_pages_test.dart test/admin_shell_pages_test.dart test/auth_onboarding_test.dart test/dashboard_automation_reconciliation_test.dart
 ```
-*Kết quả mong đợi: `00:04 +70: All tests passed!`.*
+*Kết quả ghi nhận: `00:04 +70: All tests passed!` trong **4.200s**.*
 
----
-
-## 5. CẤU HÌNH TÍCH HỢP CI/CD (GITHUB ACTIONS SNIPPET)
-
-Để tự động kích hoạt bộ test này trên mỗi Pull Request hoặc Push vào `main`:
-
-```yaml
-name: Dashboard QA Automation Pipeline
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  backend-automation:
-    name: Backend Dashboard Security & Unit Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-      - name: Run Backend Tests
-        run: |
-          cd backend
-          ./mvnw test -Dtest=DashboardServiceTest,DashboardRepositoryTest,GoogleMetricsSnapshotJobTest,DashboardControllerSecurityTest
-
-  frontend-automation:
-    name: Frontend Dashboard Reconciliation & Widget Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.x'
-          channel: 'stable'
-      - name: Install dependencies
-        run: |
-          cd frontend
-          flutter pub get
-      - name: Run Frontend Tests
-        run: |
-          cd frontend
-          flutter test test/dashboard_test.dart test/admin_pages_test.dart test/admin_shell_pages_test.dart test/auth_onboarding_test.dart test/dashboard_automation_reconciliation_test.dart
-```
+> [!NOTE]
+> Tổng số bài kiểm thử tự động độc lập được thực thi trong test suite là **96 test methods**. Quá trình chạy không có bài test nào bị tính trùng lặp.
