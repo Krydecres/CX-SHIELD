@@ -1,5 +1,7 @@
 package com.cxshield.backend.funnel;
 
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +68,34 @@ public class GooglePlacesClient {
 		}
 	}
 
+	/**
+	 * Số đánh giá và điểm sao hiện tại của địa điểm, dùng cho Dashboard (E3.1). Rỗng khi Google không trả dữ liệu.
+	 */
+	public Optional<PlaceStats> lookupStats(String placeId) {
+		if (!isEnabled()) {
+			return Optional.empty();
+		}
+		try {
+			PlaceStatsResponse response = restClient.get()
+				.uri("/places/{placeId}", placeId)
+				.header("X-Goog-Api-Key", google.placesApiKey())
+				.header("X-Goog-FieldMask", "rating,userRatingCount")
+				.retrieve()
+				.body(PlaceStatsResponse.class);
+			if (response == null || response.userRatingCount() == null) {
+				return Optional.empty();
+			}
+			return Optional.of(new PlaceStats(response.userRatingCount(), response.rating()));
+		}
+		catch (RestClientException ex) {
+			log.warn("Không đọc được số liệu Google Places: {}", ex.getClass().getSimpleName());
+			return Optional.empty();
+		}
+	}
+
+	public record PlaceStats(int reviewCount, Double rating) {
+	}
+
 	public record PlaceLookup(Result result, String name, String address) {
 
 		public enum Result {
@@ -96,6 +126,10 @@ public class GooglePlacesClient {
 
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	record LocalizedText(String text, String languageCode) {
+	}
+
+	@JsonIgnoreProperties(ignoreUnknown = true)
+	record PlaceStatsResponse(Double rating, Integer userRatingCount) {
 	}
 
 }
