@@ -76,7 +76,7 @@ class _M101RatingScreenState extends State<M101RatingScreen> {
     // 1–3 sao -> M1-04 (Form góp ý nội bộ)
     // 1 sao có thêm nút/liên kết M1-05 (Hotline khẩn cấp)
     if (stars >= 4) {
-      Navigator.of(context).pushReplacement(
+      Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => M102GoogleReviewScreen(
             surveyData: _surveyData,
@@ -85,7 +85,7 @@ class _M101RatingScreenState extends State<M101RatingScreen> {
         ),
       );
     } else {
-      Navigator.of(context).pushReplacement(
+      Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => M104FeedbackScreen(
             surveyData: _surveyData,

@@ -105,11 +105,10 @@ void main() {
       // 2. Xác nhận đã vào M1-02
       expect(find.byType(M102GoogleReviewScreen), findsOneWidget);
 
-      // 3. Kiểm tra tính chất ngăn xếp: Sau pushReplacement, Route M1-01 đã bị xóa khỏi Stack
-      // Do đó Navigator.canPop() tại M1-02 trả về false
+      // 3. Kiểm tra tính chất ngăn xếp: Dùng push nên Route M1-01 vẫn được lưu trong Stack
+      // Do đó Navigator.canPop() tại M1-02 trả về true, bấm trở lại không còn bị trắng màn hình
       final m102Context = tester.element(find.byType(M102GoogleReviewScreen));
-      expect(Navigator.of(m102Context).canPop(), isFalse,
-          reason: 'Điểm bất thường: M1-02 là Route gốc duy nhất trong stack do M1-01 dùng pushReplacement, dẫn đến việc bấm pop() bị lỗi/đứng.');
+      expect(Navigator.of(m102Context).canPop(), isTrue);
 
       // 4. Nút Back in-app vẫn tồn tại trên giao diện M1-02
       final backButton = find.text('← Trở lại khảo sát');

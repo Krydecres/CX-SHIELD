@@ -152,6 +152,11 @@ public class SurveyServiceImpl implements SurveyService {
             result.setTargetScreen("M1-02");
             result.setAllowUrgentCall(false);
             result.setMessage("Cảm ơn bạn đã hài lòng! Hãy chia sẻ trải nghiệm tuyệt vời lên Google Maps.");
+            ReviewPlatform platform = reviewPlatformRepository.findByBranchId(session.getBranchId()).orElse(null);
+            String reviewUrl = platform != null && platform.getReviewDirectUrl() != null
+                    ? platform.getReviewDirectUrl()
+                    : "https://maps.google.com";
+            result.setGoogleReviewUrl(reviewUrl);
         } else {
             result.setTargetScreen("M1-04");
             result.setAllowUrgentCall(stars == 1);

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/models/rate_result_model.dart';
 import '../core/models/survey_init_model.dart';
+import 'm1_01_rating_screen.dart';
 
-/// Màn hình M1-02: Phân luồng khách hài lòng (4-5 sao) sang Google Maps + Câu gợi ý tự copy
+/// Màn hình M1-02: Phân luồng khách hài lòng (4-5 sao) sang Google Maps + Câu gợi ý tự copy / tự sửa
 class M102GoogleReviewScreen extends StatefulWidget {
   final SurveyInitModel surveyData;
   final RateResultModel rateResult;
@@ -20,25 +22,56 @@ class M102GoogleReviewScreen extends StatefulWidget {
 
 class _M102GoogleReviewScreenState extends State<M102GoogleReviewScreen> {
   bool _isCopied = false;
-  final String _suggestedReview =
+  late final TextEditingController _reviewController;
+
+  final String _initialSuggestedReview =
       'Đồ uống tại Maison Coffee & Bistro rất ngon và chuẩn vị, không gian quán ấm cúng, sang trọng. Nhân viên phục vụ rất chu đáo và nhiệt tình!';
 
+  @override
+  void initState() {
+    super.initState();
+    _reviewController = TextEditingController(text: _initialSuggestedReview);
+  }
+
+  @override
+  void dispose() {
+    _reviewController.dispose();
+    super.dispose();
+  }
+
   void _copyToClipboard() {
-    Clipboard.setData(ClipboardData(text: _suggestedReview));
+    final textToCopy = _reviewController.text.trim();
+    if (textToCopy.isEmpty) return;
+
+    Clipboard.setData(ClipboardData(text: textToCopy));
     setState(() => _isCopied = true);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Đã sao chép câu gợi ý vào bộ nhớ tạm!'),
+        content: Text('Đã sao chép câu nhận xét vào bộ nhớ tạm!'),
         duration: Duration(seconds: 2),
         backgroundColor: Color(0xFF059669),
       ),
     );
   }
 
+  Future<void> _launchGoogleMapsUrl() async {
+    final String targetUrl = widget.rateResult.googleReviewUrl.isNotEmpty
+        ? widget.rateResult.googleReviewUrl
+        : 'https://maps.google.com';
+    final uri = Uri.parse(targetUrl);
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      await launchUrl(uri);
+    }
+  }
+
   void _openGoogleReview() {
-    // Tự động copy gợi ý để khách chỉ việc dán
-    if (!_isCopied) {
-      Clipboard.setData(ClipboardData(text: _suggestedReview));
+    // Tự động copy nội dung hiện tại để khách chỉ việc dán
+    final textToCopy = _reviewController.text.trim();
+    if (textToCopy.isNotEmpty) {
+      Clipboard.setData(ClipboardData(text: textToCopy));
+      setState(() => _isCopied = true);
     }
 
     // Hiển thị dialog thông báo chuyển tiếp Google Maps
@@ -60,12 +93,27 @@ class _M102GoogleReviewScreenState extends State<M102GoogleReviewScreen> {
         actions: [
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A)),
-            onPressed: () => Navigator.of(ctx).pop(),
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await _launchGoogleMapsUrl();
+            },
             child: const Text('Đã hiểu & Tiếp tục'),
           ),
         ],
       ),
     );
+  }
+
+  void _handleBack() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => M101RatingScreen(qrCode: widget.surveyData.qrCode),
+        ),
+      );
+    }
   }
 
   @override
@@ -77,6 +125,10 @@ class _M102GoogleReviewScreenState extends State<M102GoogleReviewScreen> {
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0.5,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _handleBack,
+        ),
       ),
       body: SafeArea(
         child: Center(
@@ -117,7 +169,7 @@ class _M102GoogleReviewScreenState extends State<M102GoogleReviewScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Box câu gợi ý tích cực
+                  // Box câu gợi ý tích cực (Có thể bấm chỉnh sửa hoặc gõ câu riêng)
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(18),
@@ -146,7 +198,7 @@ class _M102GoogleReviewScreenState extends State<M102GoogleReviewScreen> {
                                   SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
-                                      'Gợi ý nhận xét (tự động copy)',
+                                      'Gợi ý nhận xét (tự do chỉnh sửa)',
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w700,
@@ -177,12 +229,30 @@ class _M102GoogleReviewScreenState extends State<M102GoogleReviewScreen> {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        Text(
-                          _suggestedReview,
+                        TextFormField(
+                          controller: _reviewController,
+                          maxLines: 4,
+                          decoration: InputDecoration(
+                            hintText: 'Nhập hoặc chỉnh sửa lời nhận xét của bạn...',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 1.5),
+                            ),
+                            filled: true,
+                            fillColor: const Color(0xFFF9FAFB),
+                            contentPadding: const EdgeInsets.all(12),
+                          ),
                           style: const TextStyle(
                             fontSize: 14,
                             color: Color(0xFF374151),
-                            fontStyle: FontStyle.italic,
                             height: 1.4,
                           ),
                         ),
@@ -212,10 +282,11 @@ class _M102GoogleReviewScreenState extends State<M102GoogleReviewScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Nút quay lại khảo sát
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('← Trở lại khảo sát'),
+                  // Nút quay lại khảo sát (An toàn không bao giờ trắng màn hình)
+                  TextButton.icon(
+                    onPressed: _handleBack,
+                    icon: const Icon(Icons.arrow_back, size: 16),
+                    label: const Text('← Trở lại khảo sát'),
                   ),
                 ],
               ),
