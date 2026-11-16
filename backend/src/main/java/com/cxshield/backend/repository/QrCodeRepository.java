@@ -43,6 +43,19 @@ public class QrCodeRepository {
                 .findFirst();
     }
 
+    public java.util.List<QrCode> findByBranchId(UUID branchId) {
+        if (branchId == null) {
+            return java.util.List.copyOf(store.values());
+        }
+        return store.values().stream()
+                .filter(q -> branchId.equals(q.getBranchId()))
+                .toList();
+    }
+
+    public java.util.List<QrCode> findAll() {
+        return java.util.List.copyOf(store.values());
+    }
+
     public QrCode save(QrCode qrCode) {
         if (qrCode.getId() == null) {
             qrCode.setId(UUID.randomUUID());

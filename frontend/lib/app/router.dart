@@ -8,6 +8,8 @@ import '../features/d3_00_admin_shell/coming_soon_page.dart';
 import '../features/d3_01_auth/auth_page.dart';
 import '../features/d3_02_onboarding/onboarding_page.dart';
 import '../features/d3_05_google_place/google_place_page.dart';
+import '../features/d3_09_qr_studio/d3_09_qr_studio_page.dart';
+import '../features/d3_11_print_nfc/d3_11_print_nfc_page.dart';
 import '../features/d4_01_alert_channels/alert_channels_page.dart';
 import '../features/d5_01_dashboard/dashboard_page.dart';
 import '../features/d5_10_billing/billing_models.dart';
@@ -22,13 +24,14 @@ const _login = '/login';
 const _onboarding = '/onboarding';
 const _dashboard = '/dashboard';
 const _googlePlace = '/funnel/google-place';
+const _printMaterials = '/print-materials';
 const _alertChannels = '/alerts/channels';
 const _billingPlans = '/billing/plans';
 const _billingCheckout = '$_billingPlans/checkout';
 const _billingResult = '$_billingPlans/result';
 
 /// Các mục menu đã có màn thật; mục còn lại hiện trang "Sắp ra mắt".
-const _builtPages = {_dashboard, _googlePlace, _alertChannels, _billingPlans};
+const _builtPages = {_dashboard, _googlePlace, _printMaterials, _alertChannels, _billingPlans};
 
 /// Điều hướng theo trạng thái phiên:
 /// chưa đăng nhập → D3-01; đăng nhập nhưng chưa có cơ sở → D3-02; đã có cơ sở → khung admin (mặc định D5-01).
@@ -98,6 +101,16 @@ GoRouter createRouter(SessionController session) {
               isOnboardingStep: state.uri.queryParameters['step'] == 'onboarding',
             ),
           ),
+          GoRoute(
+            path: _printMaterials,
+            builder: (context, state) {
+              if (state.uri.queryParameters['view'] == 'export' || state.uri.queryParameters['tab'] == 'export') {
+                return D311PrintNfcPage(session: session);
+              }
+              return D309QrStudioPage(session: session);
+            },
+          ),
+          GoRoute(path: '/print-nfc', builder: (context, state) => D311PrintNfcPage(session: session)),
           GoRoute(path: _alertChannels, builder: (context, state) => AlertChannelsPage(session: session)),
           GoRoute(path: _billingPlans, builder: (context, state) => PricingPage(session: session)),
           GoRoute(
