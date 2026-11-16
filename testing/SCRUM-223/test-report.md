@@ -1,25 +1,39 @@
-# BÁO CÁO KẾT QUẢ KIỂM THỬ CHỨC NĂNG – SCRUM-223
+# BÁO CÁO KẾT QUẢ KIỂM THỬ TỰ ĐỘNG – SCRUM-233
 
-- **Nhiệm vụ:** [E1.2] Kiểm thử chức năng màn 4–5 sao và chuyển sang Google Maps
+- **Nhiệm vụ:** [E2.2] Kiểm thử tự động luồng gửi cảnh báo
 - **Tester:** Long Quốc Cường (Cường 032)
 - **Ngày thực hiện:** 16/11/2026
-- **Thiết bị & Môi trường:** Samsung Galaxy A07 (Android 16) + Flutter Test Runner
-- **Test Script:** `frontend/test/m1_02_google_review_screen_test.dart`
+- **Test Script:** `e2e/alert_dispatch_e22.spec.js`
 
 ## 1. TỔNG QUAN KẾT QUẢ
 - **Tổng số Test Cases:** 5
-- **Số case PASS:** 4 (80%)
-- **Số case FAIL:** 1 (20%)
-- **Số Bug phát hiện:** 1 (Tái hiện lỗi điều hướng **`BUG-SCRUM-189-01`** đã ghi nhận tại `testing/SCRUM-189/bug-reports.md`, không phát sinh bug logic mới ở E1.2)
+- **Số case PASS:** 5 (100%)
+- **Số case FAIL:** 0
+- **Số Bug phát hiện:** 0
+- **Thời gian thực thi toàn bộ suite:** 1.9 giây
 
-## 2. CHI TIẾT LỖI & GHI NHẬN KỸ THUẬT
-1. **Lỗi tái hiện (`BUG-SCRUM-189-01` – Liên kết `TC-223-05`):**
-   - **Mô tả:** Khi người dùng vào màn `M1-02` từ `M1-01` và nhấn nút `"← Trở lại khảo sát"` (`m1_02_google_review_screen.dart` dòng 217 gọi `Navigator.of(context).pop()`), ứng dụng bị đứng tại màn `M1-02` và không quay về `M1-01` do trước đó `M1-01` sử dụng `pushReplacement` làm ngăn xếp điều hướng chỉ còn 1 route (`canPop() == false`).
-   - **Tham chiếu chi tiết:** Xem đầy đủ các bước tái hiện và đề xuất sửa lỗi tại `testing/SCRUM-189/bug-reports.md`.
-2. **Quan sát kỹ thuật (`OBS-223-01` – Liên kết `TC-223-04`):**
-   - Trên bản build hiện tại, phương thức `_openGoogleReview()` (`m1_02_google_review_screen.dart` dòng 38–69) đã thực hiện tự động copy câu gợi ý và bật hộp thoại hướng dẫn dán nhận xét, nhưng chưa tích hợp `url_launcher` để mở trình duyệt ngoài tới `reviewDirectUrl` và chưa gọi kèm endpoint `POST /api/v1/surveys/public-review` từ giao diện. Đề xuất Dev bổ sung kết nối ở sprint tiếp theo.
+## 2. CHI TIẾT KẾT QUẢ THỰC THI TỰ ĐỘNG
+1. **Kiểm tra SLA thời gian gửi cảnh báo (`TC-233-01`, `TC-233-02`):**
+   - Luồng gửi góp ý `2 sao` và kích hoạt sự kiện cảnh báo hoàn tất trong **125ms**.
+   - Luồng gửi góp ý khẩn cấp `1 sao` hoàn tất trong **15ms**.
+   - Nhờ cơ chế chạy bất đồng bộ qua Virtual Thread (`AlertDispatcher.dispatchAsync`) và timeout kênh tối đa `8s` (`AlertHttpClients`), hệ thống đáp ứng tốt yêu cầu gửi cảnh báo trong vòng **10 giây** mà không làm chậm phản hồi của khách hàng.
+2. **Mô phỏng lưu trạng thái `notifications` & bảo mật (`TC-233-02`):**
+   - Kịch bản sử dụng dữ liệu mock chuẩn schema `database/n4_canh_bao.sql` cho cả hai trạng thái `SENT` và `FAILED`, tuyệt đối không hardcode Bot Token hay Webhook URL thật trong mã nguồn kiểm thử.
+3. **Kiểm thử hồi quy `E1.3` & Smoke Test (`TC-233-03`, `TC-233-04`, `TC-233-05`):**
+   - Xác nhận luồng góp ý 1–3 sao (có/không để lại SĐT, validation độ dài nội dung và định dạng SĐT VN) cùng luồng đánh giá tích cực 5 sao hoạt động ổn định, không phát sinh hồi quy.
 
-## 3. BẰNG CHỨNG THỰC THI WIDGET TEST (`flutter test test/m1_02_google_review_screen_test.dart`)
+## 3. BẰNG CHỨNG CHẠY PLAYWRIGHT THỰC TẾ (`npx playwright test e2e/alert_dispatch_e22.spec.js`)
 ```text
-h-22259841:~/h/CX-SHIELD/frontend{cuong}$ flutter test test/m1_02_google_review_screen_test.dart
-00:05 +2: All tests passed!
+h-22259841:~/h/CX-SHIELD{cuong}$ npx playwright test e2e/alert_dispatch_e22.spec.js
+
+Running 5 tests using 1 worker
+
+  ✓  1 …gửi cảnh báo (E2.2) & Hồi quy E1.3 › TC-233-01: Gửi góp ý 2 sao kích hoạt luồng cảnh báo trong vòng 10 giây (SLA < 10s) (294ms)
+[TC-233-01] Feedback + Alert trigger time: 125ms | Status: 200
+  ✓  2 …o (E2.2) & Hồi quy E1.3 › TC-233-02: Gửi góp ý khẩn cấp 1 sao & xác minh hợp đồng lưu notifications (SENT / FAILED mock) (84ms)
+[TC-233-02] Urgent 1-star alert trigger time: 15ms
+  ✓  3 … cảnh báo (E2.2) & Hồi quy E1.3 › TC-233-03: Kiểm thử hồi quy E1.3 – Gửi góp ý 3 sao không để lại SĐT vẫn lưu thành công (86ms)
+  ✓  4 …E2.2) & Hồi quy E1.3 › TC-233-04: Kiểm thử hồi quy E1.3 – Chặn nội dung góp ý quá ngắn (< 3 ký tự) và SĐT sai định dạng (187ms)
+  ✓  5 …ng luồng gửi cảnh báo (E2.2) & Hồi quy E1.3 › TC-233-05: Smoke test hồi quy – Đánh giá 5 sao điều hướng M1-02 (POSITIVE) (41ms)
+
+  5 passed (1.9s)
