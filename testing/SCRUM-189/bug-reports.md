@@ -5,105 +5,58 @@
 - **Phân hệ:** Review Funnel (Màn hình M1-01, M1-02, M1-04, M1-05, M1-06)
 - **Thiết bị thử nghiệm:** Samsung Galaxy A07, Android 16 (Samsung One UI)
 - **Ngày ghi nhận:** 06/11/2026
-- **Trạng thái:** Mới (Open) – Chờ Developer thẩm tra và khắc phục
+- **Lần cập nhật:** Điều chỉnh theo xác nhận từ Developer (chức năng 4–5 sao chưa được phân công triển khai; không ghi nhận bug độc lập cho luồng chưa hoàn thiện)
 
 ---
 
-## 1. Danh sách Lỗi chính thức phát hiện trong SCRUM-189
+## 1. Danh sách Lỗi chính thức trong SCRUM-189
 
 > [!IMPORTANT]
-> **Quy tắc thống kê lỗi:** Hiện tượng lỗi điều hướng Back khi nhấn nút Back trong ứng dụng và khi dùng phím/cử chỉ Back của Android là **hai cách tái hiện của cùng một lỗi kiến trúc điều hướng duy nhất**, do đó được quy về **01 Defect duy nhất: BUG-SCRUM-189-01**.
+> **Quy tắc phân loại lỗi theo tiến độ phát triển:**
+> - **Developer đã xác nhận:** Chức năng đánh giá 4–5 sao và màn hình cảm ơn M1-02 **chưa được phân công thực hiện / chưa hoàn thiện** trong phạm vi nhiệm vụ SCRUM-189.
+> - Theo chuẩn quy trình kiểm thử chất lượng, **không ghi nhận chức năng chưa phát triển là lỗi (bug)**.
+> - Hiện tượng đứng giao diện khi nhấn Back sau luồng 4–5 sao (M1-02) **không được kết luận là bug độc lập**, do bản thân màn hình và luồng này chưa hoàn chỉnh. Hiện tượng này được chuyển sang mục **Vấn đề quan sát kỹ thuật (Technical Observation)** để phục vụ tái kiểm thử khi Developer bàn giao chức năng chính thức.
+> - Đối với luồng 1–3 sao đã triển khai: Toàn bộ quy trình từ đánh giá, hiển thị cờ khẩn cấp 1 sao, form góp ý, validation cho đến ghi nhận vào Backend Spring Boot đều hoạt động chính xác và **không phát sinh bug**.
 
-| Mã Bug | Tóm tắt lỗi | Hai cách tái hiện (Trường hợp A & B) | Mức độ nghiêm trọng | Trạng thái |
-| :--- | :--- | :--- | :---: | :---: |
-| **BUG-SCRUM-189-01** | Ứng dụng bị đứng / không phản hồi khi điều hướng Back sau khi gửi đánh giá trên Samsung A07 (Android 16) | **Cách 1:** Nhấn nút in-app `"← Trở lại khảo sát"` trên M1-02 (TC14).<br>**Cách 2:** Nhấn phím Back hoặc vuốt cử chỉ Back Android 16 trên M1-02/M1-04 (TC15). | **Major (Nghiêm trọng)** | **CONFIRMED & REPRODUCED** |
-
----
-
-## 2. Chi tiết Báo cáo Lỗi BUG-SCRUM-189-01
-
-### 2.1. Thông tin chung
-- **Mã lỗi theo dõi:** `BUG-SCRUM-189-01`
-- **Tiêu đề lỗi:** `[Frontend-Mobile] Ứng dụng bị đứng / đóng băng khi nhấn nút Back in-app ('← Trở lại khảo sát') hoặc phím Back Android sau khi chuyển màn hình đánh giá trên thiết bị Samsung A07 (Android 16)`
-- **Mức độ ưu tiên (Priority):** High
-- **Mức độ nghiêm trọng (Severity):** Major (Làm gián đoạn hành trình người dùng, chặn khách hàng quay lại sửa đánh giá)
-- **Môi trường ghi nhận (Environment):**
-  - Thiết bị: Samsung Galaxy A07 (SM-A07x)
-  - Hệ điều hành: Android 16 (Samsung One UI)
-  - Nền tảng: Flutter 3.x (Engine Dart 3.x)
-  - Môi trường Backend: Tái hiện cả khi Backend Spring Boot đang chạy (`http://localhost:8080`) và khi Backend tắt (Offline mode).
+| Phân loại | Số lượng | Diễn giải chi tiết |
+| :--- | :---: | :--- |
+| **Tổng số Lỗi chính thức (Confirmed Defects)** | **0** | Luồng 1–3 sao hoạt động tốt; luồng 4–5 sao chưa triển khai nên không tính bug |
+| **Vấn đề quan sát kỹ thuật (Technical Observations)** | **2** | OBS-SCRUM-189-01 (Hiện tượng Back trên luồng 4–5 sao) & OBS-SCRUM-189-02 (Silent fallback) |
 
 ---
 
-### 2.2. Hai cách tái hiện lỗi (Steps to Reproduce)
+## 2. Danh mục Vấn đề Quan sát Kỹ thuật (Technical Observations)
 
-#### Cách 1: Tái hiện qua nút Back in-app trên M1-02 (Liên kết TC14)
-1. Mở ứng dụng khảo sát với mã QR mặc định `MC-B04` trên điện thoại Samsung A07.
-2. Tại màn hình chọn sao M1-01, chạm vào 5 sao (hoặc 4 sao).
-3. Ứng dụng hiển thị spinner loading và điều hướng sang màn hình cảm ơn M1-02 (`M102GoogleReviewScreen`).
-4. Cuộn xuống cuối màn hình M1-02 và chạm vào nút `"← Trở lại khảo sát"`.
-5. **Hiện tượng:** Màn hình không phản hồi, ứng dụng bị đứng hình, không đóng màn M1-02 và không quay về M1-01.
-
-#### Cách 2: Tái hiện qua phím / cử chỉ Back hệ điều hành Android 16 (Liên kết TC15)
-1. Thực hiện các bước 1–3 như trên để vào màn hình M1-02 (hoặc chọn 1–3 sao để vào M1-04).
-2. Vuốt cử chỉ Back từ cạnh màn hình hoặc nhấn phím Back phần mềm trên thanh điều hướng Android 16.
-3. **Hiện tượng:** Cử chỉ Back bị khựng lại, hệ điều hành không lùi về màn M1-01, màn hình giữ nguyên ở trạng thái đơ cứng.
-
----
-
-### 2.3. Kết quả mong đợi (Expected Result)
-- Ứng dụng đóng màn hình M1-02 / M1-04 và quay trở lại màn hình đánh giá M1-01 ban đầu một cách mượt mà. Màn hình M1-01 hiển thị ở trạng thái sẵn sàng để người dùng có thể thay đổi số sao hoặc đánh giá lại, không bị treo giao diện hay kẹt loading.
-
----
-
-### 2.4. Kết quả thực tế (Actual Result)
-- **Ứng dụng bị đứng hình, không phản hồi và không quay lại màn hình M1-01:**
-  - Nhấn vào nút `"← Trở lại khảo sát"`: Giao diện trơ ra, không có hiệu ứng chuyển màn, không đóng màn M1-02.
-  - Vuốt cử chỉ Back / bấm nút Back Android: Cử chỉ bị nuốt, hệ thống không lùi về màn M1-01.
-  - Ứng dụng không nhất thiết bị văng (crash) ra màn hình chính của điện thoại ngay lập tức mà bị đóng băng ở màn hình hiện tại.
-
----
-
-### 2.5. Bằng chứng thực nghiệm (Actual Evidence)
-1. **Kiểm thử thực tế trên thiết bị Samsung A07:** Người kiểm thử và trợ lý AI đã xác nhận hiện tượng lỗi tái hiện trên cả hai cách thao tác với thiết bị thật chạy Android 16.
-2. **Kiểm thử tự động Widget Test (`frontend/test/scrum_189_survey_widget_test.dart`):**
-   - Đã chạy: `flutter test test/scrum_189_survey_widget_test.dart` -> **3 passed, 0 failed**.
-   - Trong đó test case `TC14` đã **PASS** ở góc độ tự động hóa vì nó kiểm tra và xác nhận assertion `Navigator.of(m102Context).canPop() == false`, chứng minh bằng chứng kỹ thuật rằng sau `pushReplacement`, M1-02 là Route gốc duy nhất và không thể pop.
-3. **Đối chiếu mã nguồn (Code Inspection):**
-   - Tại `frontend/lib/screens/m1_01_rating_screen.dart` (dòng 79, 88): Dùng `pushReplacement()` thay vì `push()`.
-   - Tại `frontend/lib/screens/m1_02_google_review_screen.dart` (dòng 217): Nút in-app gọi `Navigator.of(context).pop()` khi `canPop() == false`.
-
----
-
-### 2.6. Điểm bất thường trong mã nguồn cần Developer xác minh (Code Anomaly Analysis)
-> [!NOTE]
-> Báo cáo ghi nhận điểm bất thường này từ sự đối chiếu logic giữa các dòng code để làm căn cứ kỹ thuật hỗ trợ đội phát triển, không khẳng định tuyệt đối là nguyên nhân duy nhất cho đến khi Developer thẩm tra hoàn tất.
-
-1. **Sự bất đối xứng trong điều hướng (Navigation Mismatch):**
-   - M1-01 chuyển sang M1-02 bằng `pushReplacement` (xóa màn trước).
-   - Nhưng M1-02 lại bố trí nút quay lại và gọi `Navigator.pop()` (kỳ vọng màn trước vẫn còn).
-   - Khi `pop()` được gọi trên một Navigator chỉ có 1 màn hình duy nhất (`canPop == false`), Flutter ném ngoại lệ ngầm `Failed assertion: 'canPop()': is not true` ở chế độ debug hoặc pop rỗng Navigator, dẫn tới hiện tượng đứng app.
-2. **Tương thích với Android 16 Predictive Back:**
-   - Khi Android 16 gửi sự kiện Back, Flutter kiểm tra `canPop()`. Vì `pushReplacement` làm `canPop()` bằng `false` và không có `PopScope` bọc ngoài, hệ điều hành từ chối xử lý pop và kẹt cử chỉ.
-3. **Hiện tượng treo cờ `_isSubmitting`:**
-   - Tại `M101RatingScreen` (dòng 63), `_isSubmitting = true` được bật lên khi bấm sao và không có logic reset về `false`. Nếu khắc phục điều hướng quay lại mà không reset biến này, M1-01 vẫn sẽ bị treo vòng xoay loading vĩnh viễn.
-
----
-
-### 2.7. Đề xuất giải pháp kỹ thuật (Dành cho Developer)
-1. Trong `frontend/lib/screens/m1_01_rating_screen.dart` (dòng 78–96):
-   - Đổi `Navigator.of(context).pushReplacement(...)` thành `await Navigator.of(context).push(...)`.
-   - Bổ sung `if (mounted) setState(() { _isSubmitting = false; });` ngay sau lệnh await để giải phóng trạng thái loading khi người dùng quay lại M1-01.
-2. Trên `M102GoogleReviewScreen` và `M104FeedbackScreen`:
-   - Bọc Scaffold bằng `PopScope(canPop: true, ...)` để tương thích tối đa với cử chỉ Predictive Back của Android 14–16.
-
----
-
-## 3. Ghi nhận Kỹ thuật Bổ sung (Technical Observation)
+### 2.1. OBS-SCRUM-189-01: Quan sát hiện tượng đóng băng điều hướng Back trên luồng 4–5 sao (M1-02) cần kiểm thử lại sau khi chức năng hoàn thành
 
 - **Mã theo dõi:** `OBS-SCRUM-189-01`
-- **Tiêu đề:** `Cơ chế Silent Fallback tự sinh dữ liệu cục bộ khi mất mạng mà không thông báo lỗi cho người dùng`
-- **Phân loại:** Quan sát rủi ro kỹ thuật (Technical Risk)
-- **Mô tả:** Lớp `SurveyApiService` bọc toàn bộ gọi mạng bằng `catch (_)`. Khi backend mất kết nối, hệ thống tự động sinh `responseId` giả lập dạng `local-timestamp` và vẫn cho phép điều hướng bình thường trên điện thoại.
-- **Rủi ro kiểm thử:** Người dùng và tester có thể nhầm lẫn rằng đánh giá đã được gửi lên server thành công trong khi dữ liệu chỉ lưu tạm trên RAM thiết bị.
-- **Khuyến nghị:** Cần bổ sung SnackBar hoặc Banner cảnh báo chế độ ngoại tuyến (Offline Mode) để người dùng nắm rõ tình trạng kết nối.
+- **Tiêu đề:** `Quan sát hiện tượng ứng dụng bị đứng / không phản hồi khi thao tác Back trên màn hình M1-02 (thuộc luồng 4–5 sao chưa triển khai hoàn thiện) trên thiết bị Samsung A07 (Android 16)`
+- **Màn hình liên quan:** M1-02 (`M102GoogleReviewScreen`)
+- **Tình trạng:** **Quan sát kỹ thuật (Cần kiểm thử lại sau khi Developer hoàn thành chức năng 4–5 sao)**
+- **Mô tả hiện tượng quan sát được:**
+  - Trên thiết bị Samsung Galaxy A07 (Android 16), khi chọn 4 hoặc 5 sao và chuyển sang màn hình M1-02:
+    - *Thao tác 1 (Nút in-app):* Nhấn nút `"← Trở lại khảo sát"` (dòng 216–219 trong `m1_02_google_review_screen.dart`), ứng dụng bị đứng hình, không phản hồi.
+    - *Thao tác 2 (Nút Back Android 16):* Vuốt cử chỉ Back hoặc bấm phím Back Android, cử chỉ bị khựng lại, không quay về M1-01.
+- **Phân tích nguyên nhân kỹ thuật trong mã nguồn hiện tại:**
+  - `m1_01_rating_screen.dart` (dòng 79): Gọi `Navigator.of(context).pushReplacement(...)` khi chọn 4–5 sao, làm gỡ bỏ M1-01 khỏi ngăn xếp, khiến `Navigator.canPop(context)` tại M1-02 là `false`.
+  - `m1_02_google_review_screen.dart` (dòng 217): Nút in-app lại gọi `Navigator.of(context).pop()` trên một ngăn xếp rỗng.
+  - Về mặt kiểm thử tự động, script `TC14` trong `frontend/test/scrum_189_survey_widget_test.dart` đã chạy **PASS** vì xác nhận đúng assertion kỹ thuật `Navigator.canPop() == false`.
+- **Hành động tiếp theo (Next Action):**
+  - Chuyển toàn bộ ghi chú phân tích kỹ thuật này cho Developer phụ trách luồng 4–5 sao để tối ưu hóa kiến trúc điều hướng (dùng `Navigator.push` thay vì `pushReplacement`, hoặc reset `_isSubmitting`).
+  - Đội QA sẽ thực hiện kiểm thử hồi quy (re-test) chính thức cho mục này khi User Story phát triển luồng 4–5 sao được bàn giao.
+
+---
+
+### 2.2. OBS-SCRUM-189-02: Cơ chế Silent Fallback tự sinh dữ liệu cục bộ khi mất mạng mà không cảnh báo lỗi cho người dùng
+
+- **Mã theo dõi:** `OBS-SCRUM-189-02`
+- **Tiêu đề:** `Cơ chế Silent Fallback trong SurveyApiService tự sinh dữ liệu cục bộ khi mất kết nối Backend mà không hiển thị thông báo lỗi`
+- **Màn hình liên quan:** Toàn bộ luồng khảo sát (M1-01, M1-04, M1-02)
+- **Tình trạng:** **Quan sát rủi ro kỹ thuật (Technical Risk)**
+- **Mô tả chi tiết:**
+  - Lớp `SurveyApiService` bọc toàn bộ gọi HTTP mạng bằng khối `catch (_)`.
+  - Khi Backend tắt hoặc thiết bị mất kết nối, hệ thống tự động sinh `responseId` giả lập dạng `local-${DateTime.now().millisecondsSinceEpoch}` và tiếp tục cho phép chuyển màn hình như bình thường.
+- **Rủi ro kiểm thử và vận hành:**
+  - Người dùng tại bàn hoặc tester có thể lầm tưởng rằng đánh giá và góp ý đã được chuyển thành công tới Quản lý cơ sở trong khi dữ liệu chỉ lưu tạm thời trên RAM client.
+- **Khuyến nghị kỹ thuật:**
+  - Đội phát triển nên bổ sung SnackBar hoặc Banner thông báo chế độ ngoại tuyến (Offline Banner) khi kết nối API không thành công để người dùng nắm rõ trạng thái thực của yêu cầu.
