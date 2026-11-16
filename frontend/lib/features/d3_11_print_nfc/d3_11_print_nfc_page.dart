@@ -977,7 +977,7 @@ class _D311PrintNfcPageState extends State<D311PrintNfcPage> with SingleTickerPr
                       const Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Thời gian giao hàng dự kiến:'),
+                          Expanded(child: Text('Thời gian giao hàng dự kiến:')),
                           Text('2-3 ngày làm việc', style: TextStyle(fontWeight: FontWeight.w600)),
                         ],
                       ),
