@@ -1,18 +1,43 @@
 package com.cxshield.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.Instant;
 import java.util.UUID;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class QrCode {
+    @JsonProperty("id")
     private UUID id;
+
+    @JsonProperty("branch_id")
     private UUID branchId;
+
+    @JsonProperty("code")
     private String code;
+
+    @JsonProperty("type")
     private String type; // TABLE, AREA, COUNTER, STAFF
+
+    @JsonProperty("name")
     private String name; // Bàn 04, Khu VIP, v.v.
+
+    @JsonProperty("shift_id")
     private UUID shiftId;
+
+    @JsonProperty("membership_id")
     private UUID membershipId;
+
+    @JsonProperty("status")
     private String status;
+
+    @JsonProperty("created_at")
     private Instant createdAt;
+
+    @JsonProperty("updated_at")
     private Instant updatedAt;
 
     public QrCode() {
@@ -53,4 +78,3 @@ public class QrCode {
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }
-

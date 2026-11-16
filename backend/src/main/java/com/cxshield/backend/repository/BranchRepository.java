@@ -1,41 +1,44 @@
 package com.cxshield.backend.repository;
 
 import com.cxshield.backend.entity.Branch;
+import com.cxshield.backend.supabase.SupabaseAdminClient;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Quản lý dữ liệu chi nhánh qua Supabase (E1.1).
+ * Không nạp chi nhánh mẫu tĩnh.
+ */
 @Repository
 public class BranchRepository {
-    private final Map<UUID, Branch> store = new ConcurrentHashMap<>();
 
-    public BranchRepository() {
-        // Chi nhánh mẫu Quận 1
-        UUID branchId = UUID.fromString("b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22");
-        UUID businessId = UUID.fromString("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11");
+    private static final ParameterizedTypeReference<List<Branch>> BRANCH_ROWS = new ParameterizedTypeReference<>() {};
 
-        Branch branch = new Branch(
-                branchId,
-                businessId,
-                "CN-Q1",
-                "Chi nhánh Quận 1 - Đồng Khởi",
-                "123 Đường Đồng Khởi, Bến Nghé, Quận 1, TP. Hồ Chí Minh",
-                "02838221122",
-                "ACTIVE"
-        );
-        store.put(branchId, branch);
+    private final SupabaseAdminClient supabase;
+
+    public BranchRepository(SupabaseAdminClient supabase) {
+        this.supabase = supabase;
     }
 
     public Optional<Branch> findById(UUID id) {
-        return Optional.ofNullable(store.get(id));
+        if (id == null) {
+            return Optional.empty();
+        }
+        return supabase.select("branches", Map.of("id", "eq." + id), BRANCH_ROWS)
+                .stream()
+                .findFirst();
     }
 
     public Branch save(Branch branch) {
-        store.put(branch.getId(), branch);
+        if (branch.getId() == null) {
+            branch.setId(UUID.randomUUID());
+        }
+        supabase.upsert("branches", "id", branch);
         return branch;
     }
 }
-

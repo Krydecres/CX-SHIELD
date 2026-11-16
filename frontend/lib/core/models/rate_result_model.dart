@@ -7,6 +7,7 @@ class RateResultModel {
   final bool allowUrgentCall;
   final String message;
   final String hotline;
+  final String googleReviewUrl;
 
   const RateResultModel({
     required this.responseId,
@@ -17,6 +18,7 @@ class RateResultModel {
     required this.allowUrgentCall,
     required this.message,
     required this.hotline,
+    this.googleReviewUrl = 'https://maps.google.com',
   });
 
   factory RateResultModel.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class RateResultModel {
       allowUrgentCall: json['allowUrgentCall'] as bool? ?? false,
       message: json['message'] as String? ?? '',
       hotline: json['hotline'] as String? ?? '02838221122',
+      googleReviewUrl: json['googleReviewUrl'] as String? ?? 'https://maps.google.com',
     );
   }
 }

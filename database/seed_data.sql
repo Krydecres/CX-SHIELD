@@ -42,9 +42,10 @@ VALUES (
 ) ON CONFLICT (id) DO NOTHING;
 
 -- 4. Thêm nền tảng Google Maps cho chi nhánh
-INSERT INTO review_platforms (id, branch_id, platform_name, google_place_id, review_direct_url, place_name, place_address, connection_status, routing_weight_percent, is_active)
+INSERT INTO review_platforms (id, business_id, branch_id, platform_name, google_place_id, review_direct_url, place_name, place_address, connection_status, routing_weight_percent, is_active)
 VALUES (
     'd0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44',
+    'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
     'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22',
     'Google Maps',
     'ChIJ1234567890abcdef',

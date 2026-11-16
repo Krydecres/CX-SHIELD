@@ -11,6 +11,7 @@ public class RateResultDto {
     private boolean allowUrgentCall; // true if starRating == 1 (for M1-05 option)
     private String message;
     private String hotline;
+    private String googleReviewUrl;
 
     public RateResultDto() {}
 
@@ -30,5 +31,7 @@ public class RateResultDto {
     public void setMessage(String message) { this.message = message; }
     public String getHotline() { return hotline; }
     public void setHotline(String hotline) { this.hotline = hotline; }
+    public String getGoogleReviewUrl() { return googleReviewUrl; }
+    public void setGoogleReviewUrl(String googleReviewUrl) { this.googleReviewUrl = googleReviewUrl; }
 }
 

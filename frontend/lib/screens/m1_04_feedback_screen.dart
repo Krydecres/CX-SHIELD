@@ -4,6 +4,7 @@ import '../core/models/rate_result_model.dart';
 import '../core/models/survey_init_model.dart';
 import '../core/services/survey_api_service.dart';
 import '../core/services/voice_recognition_service.dart';
+import 'm1_01_rating_screen.dart';
 import 'm1_05_urgent_call_screen.dart';
 import 'm1_06_thank_you_screen.dart';
 
@@ -178,6 +179,18 @@ class _M104FeedbackScreenState extends State<M104FeedbackScreen> {
     }
   }
 
+  void _handleBack() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => M101RatingScreen(qrCode: widget.surveyData.qrCode),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final stars = widget.rateResult.starRating;
@@ -192,6 +205,10 @@ class _M104FeedbackScreenState extends State<M104FeedbackScreen> {
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0.5,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _handleBack,
+        ),
       ),
       body: SafeArea(
         child: Center(
@@ -575,6 +592,14 @@ class _M104FeedbackScreenState extends State<M104FeedbackScreen> {
                             ),
                           ),
                         ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: _handleBack,
+                        icon: const Icon(Icons.arrow_back, size: 16),
+                        label: const Text('Chọn lại số sao đánh giá'),
                       ),
                     ),
                   ],

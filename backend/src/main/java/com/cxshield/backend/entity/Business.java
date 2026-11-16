@@ -1,20 +1,49 @@
 package com.cxshield.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.Instant;
 import java.util.UUID;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Business {
+    @JsonProperty("id")
     private UUID id;
+
+    @JsonProperty("brand_name")
     private String brandName;
+
+    @JsonProperty("display_name")
     private String displayName;
+
+    @JsonProperty("industry")
     private String industry;
+
+    @JsonProperty("phone")
     private String phone;
+
+    @JsonProperty("logo_url")
     private String logoUrl;
+
+    @JsonProperty("primary_color")
     private String primaryColor;
+
+    @JsonProperty("tax_code")
     private String taxCode;
+
+    @JsonProperty("public_slug")
     private String publicSlug;
+
+    @JsonProperty("status")
     private String status;
+
+    @JsonProperty("created_at")
     private Instant createdAt;
+
+    @JsonProperty("updated_at")
     private Instant updatedAt;
 
     public Business() {
@@ -63,4 +92,3 @@ public class Business {
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }
-

@@ -1,23 +1,59 @@
 package com.cxshield.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SurveySession {
+    @JsonProperty("id")
     private UUID id;
+
+    @JsonProperty("business_id")
+    private UUID businessId;
+
+    @JsonProperty("qr_code_id")
     private UUID qrCodeId;
+
+    @JsonProperty("branch_id")
     private UUID branchId;
+
+    @JsonProperty("customer_id")
     private UUID customerId;
+
+    @JsonProperty("pos_transaction_id")
     private UUID posTransactionId;
+
+    @JsonProperty("table_or_area_code")
     private String tableOrAreaCode;
+
+    @JsonProperty("client_ip")
     private String clientIp;
+
+    @JsonProperty("user_agent")
     private String userAgent;
+
+    @JsonProperty("recaptcha_score")
     private BigDecimal recaptchaScore;
+
+    @JsonProperty("status")
     private String status; // STARTED, COMPLETED, EXPIRED, CANCELLED
+
+    @JsonProperty("started_at")
     private Instant startedAt;
+
+    @JsonProperty("completed_at")
     private Instant completedAt;
+
+    @JsonProperty("created_at")
     private Instant createdAt;
+
+    @JsonProperty("updated_at")
     private Instant updatedAt;
 
     public SurveySession() {
@@ -30,6 +66,8 @@ public class SurveySession {
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
+    public UUID getBusinessId() { return businessId; }
+    public void setBusinessId(UUID businessId) { this.businessId = businessId; }
     public UUID getQrCodeId() { return qrCodeId; }
     public void setQrCodeId(UUID qrCodeId) { this.qrCodeId = qrCodeId; }
     public UUID getBranchId() { return branchId; }
@@ -57,4 +95,3 @@ public class SurveySession {
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }
-
