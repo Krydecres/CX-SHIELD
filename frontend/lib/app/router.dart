@@ -8,7 +8,12 @@ import '../features/d3_00_admin_shell/coming_soon_page.dart';
 import '../features/d3_01_auth/auth_page.dart';
 import '../features/d3_02_onboarding/onboarding_page.dart';
 import '../features/d3_05_google_place/google_place_page.dart';
+import '../features/d4_01_alert_channels/alert_channels_page.dart';
 import '../features/d5_01_dashboard/dashboard_page.dart';
+import '../features/d5_10_billing/billing_models.dart';
+import '../features/d5_10_billing/checkout_page.dart';
+import '../features/d5_10_billing/payment_result_page.dart';
+import '../features/d5_10_billing/pricing_page.dart';
 import '../screens/m1_01_rating_screen.dart';
 import 'splash_page.dart';
 
@@ -17,6 +22,13 @@ const _login = '/login';
 const _onboarding = '/onboarding';
 const _dashboard = '/dashboard';
 const _googlePlace = '/funnel/google-place';
+const _alertChannels = '/alerts/channels';
+const _billingPlans = '/billing/plans';
+const _billingCheckout = '$_billingPlans/checkout';
+const _billingResult = '$_billingPlans/result';
+
+/// Các mục menu đã có màn thật; mục còn lại hiện trang "Sắp ra mắt".
+const _builtPages = {_dashboard, _googlePlace, _alertChannels, _billingPlans};
 
 /// Điều hướng theo trạng thái phiên:
 /// chưa đăng nhập → D3-01; đăng nhập nhưng chưa có cơ sở → D3-02; đã có cơ sở → khung admin (mặc định D5-01).
@@ -31,6 +43,10 @@ String? sessionRedirect(SessionStatus status, bool onboarded, Uri uri, {bool has
   switch (status) {
     case SessionStatus.loadingProfile when hasProfile:
       // Đang làm mới hồ sơ đã có (ví dụ sau khi onboarding): giữ nguyên trang hiện tại.
+      return null;
+    // VNPAY chuyển trình duyệt về làm app tải lại: giữ trang kết quả trong lúc khôi phục phiên.
+    case SessionStatus.initializing when path == _billingResult:
+    case SessionStatus.loadingProfile when path == _billingResult:
       return null;
     case SessionStatus.initializing:
     case SessionStatus.loadingProfile:
@@ -82,7 +98,22 @@ GoRouter createRouter(SessionController session) {
               isOnboardingStep: state.uri.queryParameters['step'] == 'onboarding',
             ),
           ),
-          for (final item in adminMenu.where((i) => i.path != _dashboard && i.path != _googlePlace))
+          GoRoute(path: _alertChannels, builder: (context, state) => AlertChannelsPage(session: session)),
+          GoRoute(path: _billingPlans, builder: (context, state) => PricingPage(session: session)),
+          GoRoute(
+            path: _billingCheckout,
+            builder: (context, state) => CheckoutPage(
+              session: session,
+              planId: state.uri.queryParameters['planId'],
+              cycle: BillingCycle.fromApi(state.uri.queryParameters['cycle']),
+            ),
+          ),
+          GoRoute(
+            path: _billingResult,
+            builder: (context, state) =>
+                PaymentResultPage(session: session, transactionCode: state.uri.queryParameters['code']),
+          ),
+          for (final item in adminMenu.where((i) => !_builtPages.contains(i.path)))
             GoRoute(path: item.path, builder: (context, state) => ComingSoonPage(item: item)),
         ],
       ),
