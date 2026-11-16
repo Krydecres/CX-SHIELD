@@ -61,23 +61,167 @@ class BillingPlan {
 }
 
 class Subscription {
-  const Subscription({this.planId, this.planName, this.cycle, this.status, this.endDate});
+  const Subscription({
+    this.planId,
+    this.planName,
+    this.cycle,
+    this.status,
+    this.startDate,
+    this.endDate,
+    this.autoRenew = true,
+    this.daysRemaining,
+    this.trialEndDate,
+    this.graceUntil,
+    this.isExpiringSoon = false,
+    this.isOverdue = false,
+  });
 
   factory Subscription.fromJson(Map<String, dynamic> json) => Subscription(
         planId: json['planId'] as String?,
         planName: json['planName'] as String?,
         cycle: BillingCycle.fromApi(json['billingCycle'] as String?),
         status: json['status'] as String?,
+        startDate: json['startDate'] == null ? null : DateTime.parse(json['startDate'] as String),
         endDate: json['endDate'] == null ? null : DateTime.parse(json['endDate'] as String),
+        autoRenew: json['autoRenew'] as bool? ?? true,
+        daysRemaining: json['daysRemaining'] as int?,
+        trialEndDate: json['trialEndDate'] == null ? null : DateTime.parse(json['trialEndDate'] as String),
+        graceUntil: json['graceUntil'] == null ? null : DateTime.parse(json['graceUntil'] as String),
+        isExpiringSoon: json['isExpiringSoon'] as bool? ?? false,
+        isOverdue: json['isOverdue'] as bool? ?? false,
       );
 
   final String? planId;
   final String? planName;
   final BillingCycle? cycle;
   final String? status;
+  final DateTime? startDate;
   final DateTime? endDate;
+  final bool autoRenew;
+  final int? daysRemaining;
+  final DateTime? trialEndDate;
+  final DateTime? graceUntil;
+  final bool isExpiringSoon;
+  final bool isOverdue;
 
   bool get isActive => status == 'ACTIVE' || status == 'TRIAL';
+  bool get isTrial => status == 'TRIAL';
+  bool get isCancelled => status == 'CANCELLED';
+  bool get isExpired => status == 'EXPIRED';
+}
+
+class PaymentHistoryItem {
+  const PaymentHistoryItem({
+    required this.id,
+    required this.businessId,
+    this.planId,
+    this.planName,
+    this.billingCycle,
+    required this.transactionCode,
+    required this.amount,
+    required this.status,
+    this.method = 'VNPAY',
+    this.gatewayResponseCode,
+    this.paidAt,
+    this.createdAt,
+    this.invoiceId,
+    this.invoiceNumber,
+  });
+
+  factory PaymentHistoryItem.fromJson(Map<String, dynamic> json) => PaymentHistoryItem(
+        id: json['id'] as String,
+        businessId: json['businessId'] as String,
+        planId: json['planId'] as String?,
+        planName: json['planName'] as String?,
+        billingCycle: BillingCycle.fromApi(json['billingCycle'] as String?),
+        transactionCode: json['transactionCode'] as String? ?? '',
+        amount: json['amount'] as int? ?? 0,
+        status: json['status'] as String? ?? 'PENDING',
+        method: json['method'] as String? ?? 'VNPAY',
+        gatewayResponseCode: json['gatewayResponseCode'] as String?,
+        paidAt: json['paidAt'] == null ? null : DateTime.parse(json['paidAt'] as String),
+        createdAt: json['createdAt'] == null ? null : DateTime.parse(json['createdAt'] as String),
+        invoiceId: json['invoiceId'] as String?,
+        invoiceNumber: json['invoiceNumber'] as String?,
+      );
+
+  final String id;
+  final String businessId;
+  final String? planId;
+  final String? planName;
+  final BillingCycle? billingCycle;
+  final String transactionCode;
+  final int amount;
+  final String status;
+  final String method;
+  final String? gatewayResponseCode;
+  final DateTime? paidAt;
+  final DateTime? createdAt;
+  final String? invoiceId;
+  final String? invoiceNumber;
+
+  bool get isSuccess => status == 'SUCCESS';
+  bool get hasInvoice => isSuccess;
+}
+
+class InvoiceItem {
+  const InvoiceItem({
+    required this.id,
+    required this.businessId,
+    required this.paymentId,
+    required this.transactionCode,
+    required this.invoiceNumber,
+    this.companyName,
+    this.companyAddress,
+    this.taxCode,
+    this.buyerName,
+    this.billingEmail,
+    required this.subtotal,
+    this.vatRate = 10.0,
+    required this.vatAmount,
+    required this.totalAmount,
+    required this.issuedAt,
+    required this.pdfUrl,
+    required this.xmlUrl,
+  });
+
+  factory InvoiceItem.fromJson(Map<String, dynamic> json) => InvoiceItem(
+        id: json['id'] as String,
+        businessId: json['businessId'] as String,
+        paymentId: json['paymentId'] as String,
+        transactionCode: json['transactionCode'] as String? ?? '',
+        invoiceNumber: json['invoiceNumber'] as String? ?? '',
+        companyName: json['companyName'] as String?,
+        companyAddress: json['companyAddress'] as String?,
+        taxCode: json['taxCode'] as String?,
+        buyerName: json['buyerName'] as String?,
+        billingEmail: json['billingEmail'] as String?,
+        subtotal: json['subtotal'] as int? ?? 0,
+        vatRate: (json['vatRate'] as num?)?.toDouble() ?? 10.0,
+        vatAmount: json['vatAmount'] as int? ?? 0,
+        totalAmount: json['totalAmount'] as int? ?? 0,
+        issuedAt: json['issuedAt'] == null ? DateTime.now() : DateTime.parse(json['issuedAt'] as String),
+        pdfUrl: json['pdfUrl'] as String? ?? '',
+        xmlUrl: json['xmlUrl'] as String? ?? '',
+      );
+
+  final String id;
+  final String businessId;
+  final String paymentId;
+  final String transactionCode;
+  final String invoiceNumber;
+  final String? companyName;
+  final String? companyAddress;
+  final String? taxCode;
+  final String? buyerName;
+  final String? billingEmail;
+  final int subtotal;
+  final double vatRate;
+  final int vatAmount;
+  final int totalAmount;
+  final DateTime issuedAt;
+  final String pdfUrl;
+  final String xmlUrl;
 }
 
 class BillingProfile {

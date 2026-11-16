@@ -32,6 +32,11 @@ public class BillingRepository {
 	};
 	private static final ParameterizedTypeReference<List<PaymentRow>> PAYMENT_ROWS = new ParameterizedTypeReference<>() {
 	};
+	private static final ParameterizedTypeReference<List<InvoiceRow>> INVOICE_ROWS = new ParameterizedTypeReference<>() {
+	};
+
+	private static final String INVOICE_COLUMNS = "id,business_id,payment_id,invoice_number,company_name,company_address,"
+			+ "tax_code,buyer_name,billing_email,subtotal,vat_rate,vat_amount,total_amount,issued_at,pdf_url,xml_url";
 
 	private final SupabaseDataClient supabase;
 
@@ -54,11 +59,49 @@ public class BillingRepository {
 	public Optional<SubscriptionRow> findCurrentSubscription(String token, UUID businessId) {
 		return supabase
 			.select(token, "subscriptions",
-					Map.of("select", "id,plan_id,billing_cycle,status,start_date,end_date,plans(name)", "business_id",
+					Map.of("select", "id,plan_id,billing_cycle,status,start_date,end_date,auto_renew,trial_end_date,grace_until,plans(name)", "business_id",
 							"eq." + businessId, "status", "neq.CANCELLED", "order", "created_at.desc", "limit", "1"),
 					SUBSCRIPTION_ROWS)
 			.stream()
 			.findFirst();
+	}
+
+	public Optional<SubscriptionRow> updateSubscriptionAutoRenew(String token, UUID subscriptionId, boolean autoRenew) {
+		return supabase
+			.update(token, "subscriptions", Map.of("id", "eq." + subscriptionId), Map.of("auto_renew", autoRenew), SUBSCRIPTION_ROWS)
+			.stream()
+			.findFirst();
+	}
+
+	public List<PaymentRow> findPaymentsByBusiness(String token, UUID businessId) {
+		return supabase.select(token, "payments",
+				Map.of("select", PaymentAdminRepository.PAYMENT_COLUMNS + ",created_at,method", "business_id", "eq." + businessId,
+						"order", "created_at.desc"),
+				PAYMENT_ROWS);
+	}
+
+	public List<InvoiceRow> findInvoicesByBusiness(String token, UUID businessId) {
+		return supabase.select(token, "invoices",
+				Map.of("select", INVOICE_COLUMNS, "business_id", "eq." + businessId, "order", "issued_at.desc"),
+				INVOICE_ROWS);
+	}
+
+	public Optional<InvoiceRow> findInvoiceById(String token, UUID invoiceId) {
+		return supabase
+			.select(token, "invoices", Map.of("select", INVOICE_COLUMNS, "id", "eq." + invoiceId), INVOICE_ROWS)
+			.stream()
+			.findFirst();
+	}
+
+	public Optional<InvoiceRow> findInvoiceByPaymentId(String token, UUID paymentId) {
+		return supabase
+			.select(token, "invoices", Map.of("select", INVOICE_COLUMNS, "payment_id", "eq." + paymentId), INVOICE_ROWS)
+			.stream()
+			.findFirst();
+	}
+
+	public Optional<InvoiceRow> insertInvoice(String token, Map<String, Object> values) {
+		return supabase.insert(token, "invoices", values, INVOICE_ROWS).stream().findFirst();
 	}
 
 	public Optional<BillingProfileRow> findBillingProfile(String token, UUID businessId) {
@@ -103,10 +146,22 @@ public class BillingRepository {
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public record SubscriptionRow(UUID id, @JsonProperty("plan_id") UUID planId,
 			@JsonProperty("billing_cycle") BillingCycle billingCycle, String status,
-			@JsonProperty("start_date") LocalDate startDate, @JsonProperty("end_date") LocalDate endDate, PlanRef plans) {
+			@JsonProperty("start_date") LocalDate startDate, @JsonProperty("end_date") LocalDate endDate,
+			@JsonProperty("auto_renew") Boolean autoRenew,
+			@JsonProperty("trial_end_date") LocalDate trialEndDate,
+			@JsonProperty("grace_until") LocalDate graceUntil,
+			PlanRef plans) {
+
+		public SubscriptionRow(UUID id, UUID planId, BillingCycle billingCycle, String status, LocalDate startDate, LocalDate endDate, PlanRef plans) {
+			this(id, planId, billingCycle, status, startDate, endDate, true, null, null, plans);
+		}
 
 		public String planName() {
 			return plans == null ? null : plans.name();
+		}
+
+		public boolean isAutoRenew() {
+			return autoRenew == null || autoRenew;
 		}
 
 	}
@@ -126,7 +181,38 @@ public class BillingRepository {
 	public record PaymentRow(UUID id, @JsonProperty("business_id") UUID businessId, @JsonProperty("plan_id") UUID planId,
 			@JsonProperty("billing_cycle") BillingCycle billingCycle, @JsonProperty("transaction_code") String transactionCode,
 			long amount, String status, @JsonProperty("gateway_response_code") String gatewayResponseCode,
-			@JsonProperty("paid_at") OffsetDateTime paidAt) {
+			@JsonProperty("paid_at") OffsetDateTime paidAt, @JsonProperty("created_at") OffsetDateTime createdAt,
+			String method, PlanRef plans) {
+
+		public PaymentRow(UUID id, UUID businessId, UUID planId, BillingCycle billingCycle, String transactionCode,
+				long amount, String status, String gatewayResponseCode, OffsetDateTime paidAt) {
+			this(id, businessId, planId, billingCycle, transactionCode, amount, status, gatewayResponseCode, paidAt,
+					paidAt != null ? paidAt : OffsetDateTime.now(), "VNPAY", null);
+		}
+
+		public String planName() {
+			return plans == null ? null : plans.name();
+		}
+
+	}
+
+	@JsonIgnoreProperties(ignoreUnknown = true)
+	public record InvoiceRow(UUID id, @JsonProperty("business_id") UUID businessId,
+			@JsonProperty("payment_id") UUID paymentId, @JsonProperty("invoice_number") String invoiceNumber,
+			@JsonProperty("company_name") String companyName, @JsonProperty("company_address") String companyAddress,
+			@JsonProperty("tax_code") String taxCode, @JsonProperty("buyer_name") String buyerName,
+			@JsonProperty("billing_email") String billingEmail, long subtotal,
+			@JsonProperty("vat_rate") double vatRate, @JsonProperty("vat_amount") long vatAmount,
+			@JsonProperty("total_amount") long totalAmount, @JsonProperty("issued_at") OffsetDateTime issuedAt,
+			@JsonProperty("pdf_url") String pdfUrl, @JsonProperty("xml_url") String xmlUrl) {
+
+		public InvoiceRow(UUID id, UUID businessId, UUID paymentId, String invoiceNumber,
+				String companyName, String companyAddress, String taxCode, String buyerName,
+				String billingEmail, long subtotal, double vatRate, long vatAmount,
+				long totalAmount, OffsetDateTime issuedAt) {
+			this(id, businessId, paymentId, invoiceNumber, companyName, companyAddress, taxCode, buyerName,
+					billingEmail, subtotal, vatRate, vatAmount, totalAmount, issuedAt, null, null);
+		}
 	}
 
 }

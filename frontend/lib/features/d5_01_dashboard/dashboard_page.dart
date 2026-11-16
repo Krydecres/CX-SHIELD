@@ -9,6 +9,8 @@ import '../../core/widgets/notice_banner.dart';
 import '../d3_05_google_place/google_place_api.dart';
 import '../d3_05_google_place/google_place_models.dart';
 import '../d3_05_google_place/google_place_page.dart';
+import '../d5_10_billing/billing_api.dart';
+import '../d5_10_billing/billing_models.dart';
 import 'dashboard_api.dart';
 import 'dashboard_models.dart';
 import 'dashboard_widgets.dart';
@@ -27,8 +29,10 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   late final _googlePlaceApi = GooglePlaceApi(widget.session.api);
   late final _dashboardApi = DashboardApi(widget.session.api);
+  late final _billingApi = BillingApi(widget.session.api);
   String? _branchId;
   PlaceConnectionStatus? _googleStatus;
+  Subscription? _subscription;
 
   /// Chi nhánh đang lọc; null là tất cả chi nhánh.
   String? _filterBranchId;
@@ -58,7 +62,17 @@ class _DashboardPageState extends State<DashboardPage> {
     if (businessId != null && businessId != _loadedBusinessId) {
       _loadedBusinessId = businessId;
       _loadData();
+      _loadSubscription();
     }
+  }
+
+  Future<void> _loadSubscription() async {
+    final businessId = widget.session.business?.id;
+    if (businessId == null || widget.session.membership?.role != 'OWNER') return;
+    try {
+      final sub = await _billingApi.subscription(businessId);
+      if (mounted) setState(() => _subscription = sub);
+    } catch (_) {}
   }
 
   Future<void> _loadData() async {
@@ -106,6 +120,20 @@ class _DashboardPageState extends State<DashboardPage> {
       subtitle: '${session.business?.brandName ?? ''} · ${_range.label}',
       actions: _buildFilters(),
       children: [
+        if (_subscription != null && (_subscription!.isOverdue || _subscription!.isExpiringSoon)) ...[
+          NoticeBanner(
+            type: _subscription!.isOverdue ? NoticeType.error : NoticeType.warning,
+            title: _subscription!.isOverdue ? 'Gói dịch vụ đã quá hạn thanh toán' : 'Gói dịch vụ sắp hết hạn',
+            message: _subscription!.isOverdue
+                ? 'Gói ${_subscription!.planName ?? ''} đã quá hạn. Gia hạn ngay để không làm gián đoạn mã QR khảo sát tại bàn.'
+                : 'Gói ${_subscription!.planName ?? ''} sẽ hết hạn trong ${_subscription!.daysRemaining} ngày nữa. Gia hạn ngay để duy trì hoạt động.',
+            action: ElevatedButton(
+              onPressed: () => context.go('/billing/subscription'),
+              child: const Text('Gia hạn ngay'),
+            ),
+          ),
+          const SizedBox(height: AppSpace.lg),
+        ],
         _buildStats(),
         const SizedBox(height: AppSpace.xl),
         SectionCard(

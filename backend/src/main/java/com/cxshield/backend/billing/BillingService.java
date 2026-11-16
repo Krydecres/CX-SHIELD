@@ -48,21 +48,28 @@ public class BillingService {
 	private final BillingRepository billingRepository;
 	private final PaymentAdminRepository paymentRepository;
 	private final VnpayGateway vnpay;
+	private final InvoiceExportService invoiceExportService;
 	private final Clock clock;
 
 	@Autowired
 	public BillingService(AccountRepository accountRepository, BillingRepository billingRepository,
-			PaymentAdminRepository paymentRepository, VnpayGateway vnpay) {
-		this(accountRepository, billingRepository, paymentRepository, vnpay, Clock.systemUTC());
+			PaymentAdminRepository paymentRepository, VnpayGateway vnpay, InvoiceExportService invoiceExportService) {
+		this(accountRepository, billingRepository, paymentRepository, vnpay, invoiceExportService, Clock.systemUTC());
 	}
 
 	BillingService(AccountRepository accountRepository, BillingRepository billingRepository,
-			PaymentAdminRepository paymentRepository, VnpayGateway vnpay, Clock clock) {
+			PaymentAdminRepository paymentRepository, VnpayGateway vnpay, InvoiceExportService invoiceExportService, Clock clock) {
 		this.accountRepository = accountRepository;
 		this.billingRepository = billingRepository;
 		this.paymentRepository = paymentRepository;
 		this.vnpay = vnpay;
+		this.invoiceExportService = invoiceExportService;
 		this.clock = clock;
+	}
+
+	BillingService(AccountRepository accountRepository, BillingRepository billingRepository,
+			PaymentAdminRepository paymentRepository, VnpayGateway vnpay, Clock clock) {
+		this(accountRepository, billingRepository, paymentRepository, vnpay, new InvoiceExportService(), clock);
 	}
 
 	public List<PlanResponse> getPlans(String token) {
@@ -72,8 +79,88 @@ public class BillingService {
 	public SubscriptionResponse getSubscription(String token, UUID userId, UUID businessId) {
 		requireOwner(token, userId, businessId);
 		return billingRepository.findCurrentSubscription(token, businessId)
-			.map(BillingService::toSubscriptionResponse)
+			.map(row -> toSubscriptionResponse(row))
 			.orElseGet(() -> new SubscriptionResponse(null, null, null, null, null, null));
+	}
+
+	public SubscriptionResponse updateAutoRenew(String token, UUID userId, UUID businessId, boolean autoRenew) {
+		requireOwner(token, userId, businessId);
+		SubscriptionRow current = billingRepository.findCurrentSubscription(token, businessId)
+				.orElseThrow(() -> ApiException.notFound("SUBSCRIPTION_NOT_FOUND", "Không tìm thấy thuê bao của cơ sở."));
+
+		SubscriptionRow updated = billingRepository.updateSubscriptionAutoRenew(token, current.id(), autoRenew)
+				.orElse(new SubscriptionRow(current.id(), current.planId(), current.billingCycle(), current.status(),
+						current.startDate(), current.endDate(), autoRenew, current.trialEndDate(), current.graceUntil(), current.plans()));
+
+		return toSubscriptionResponse(updated);
+	}
+
+	public List<com.cxshield.backend.billing.dto.BillingDtos.PaymentHistoryResponse> getPaymentHistory(
+			String token, UUID userId, UUID businessId) {
+		requireOwner(token, userId, businessId);
+		List<PaymentRow> payments = billingRepository.findPaymentsByBusiness(token, businessId);
+		List<com.cxshield.backend.billing.BillingRepository.InvoiceRow> invoices = billingRepository.findInvoicesByBusiness(token, businessId);
+		Map<UUID, com.cxshield.backend.billing.BillingRepository.InvoiceRow> invoiceMap = invoices.stream()
+				.collect(java.util.stream.Collectors.toMap(com.cxshield.backend.billing.BillingRepository.InvoiceRow::paymentId, inv -> inv, (a, b) -> a));
+
+		return payments.stream().map(p -> {
+			com.cxshield.backend.billing.BillingRepository.InvoiceRow inv = invoiceMap.get(p.id());
+			return new com.cxshield.backend.billing.dto.BillingDtos.PaymentHistoryResponse(
+					p.id(),
+					p.businessId(),
+					p.planId(),
+					p.planName() != null ? p.planName() : "Gói dịch vụ CX-SHIELD",
+					p.billingCycle(),
+					p.transactionCode(),
+					p.amount(),
+					p.status(),
+					p.method() != null ? p.method() : "VNPAY",
+					p.gatewayResponseCode(),
+					p.paidAt(),
+					p.createdAt() != null ? p.createdAt() : (p.paidAt() != null ? p.paidAt() : java.time.OffsetDateTime.now()),
+					inv != null ? inv.id() : null,
+					inv != null ? inv.invoiceNumber() : ("SUCCESS".equals(p.status()) ? "HD-" + p.transactionCode() : null)
+			);
+		}).toList();
+	}
+
+	public List<com.cxshield.backend.billing.dto.BillingDtos.InvoiceResponse> getInvoices(
+			String token, UUID userId, UUID businessId) {
+		requireOwner(token, userId, businessId);
+		List<com.cxshield.backend.billing.BillingRepository.InvoiceRow> dbInvoices = billingRepository.findInvoicesByBusiness(token, businessId);
+		if (!dbInvoices.isEmpty()) {
+			return dbInvoices.stream().map(this::toInvoiceResponse).toList();
+		}
+
+		// Tạo danh sách hoá đơn tổng hợp từ các payment SUCCESS
+		List<PaymentRow> payments = billingRepository.findPaymentsByBusiness(token, businessId);
+		BillingProfileDto profile = getBillingProfile(token, userId, businessId);
+
+		return payments.stream()
+				.filter(p -> "SUCCESS".equalsIgnoreCase(p.status()))
+				.map(p -> synthesizeInvoice(businessId, p, profile))
+				.toList();
+	}
+
+	public com.cxshield.backend.billing.dto.BillingDtos.InvoiceResponse getInvoice(
+			String token, UUID userId, UUID businessId, UUID invoiceId) {
+		requireOwner(token, userId, businessId);
+		return billingRepository.findInvoiceById(token, invoiceId)
+				.map(this::toInvoiceResponse)
+				.orElseGet(() -> getInvoices(token, userId, businessId).stream()
+						.filter(inv -> invoiceId.equals(inv.id()))
+						.findFirst()
+						.orElseThrow(() -> ApiException.notFound("INVOICE_NOT_FOUND", "Không tìm thấy hóa đơn.")));
+	}
+
+	public byte[] exportInvoicePdf(String token, UUID userId, UUID businessId, UUID invoiceId) throws java.io.IOException {
+		com.cxshield.backend.billing.dto.BillingDtos.InvoiceResponse invoice = getInvoice(token, userId, businessId, invoiceId);
+		return invoiceExportService.exportPdf(invoice);
+	}
+
+	public byte[] exportInvoiceXml(String token, UUID userId, UUID businessId, UUID invoiceId) {
+		com.cxshield.backend.billing.dto.BillingDtos.InvoiceResponse invoice = getInvoice(token, userId, businessId, invoiceId);
+		return invoiceExportService.exportXml(invoice);
 	}
 
 	public BillingProfileDto getBillingProfile(String token, UUID userId, UUID businessId) {
@@ -190,9 +277,93 @@ public class BillingService {
 				row.maxQrCodes(), row.features(), row.includedPrintItems());
 	}
 
-	private static SubscriptionResponse toSubscriptionResponse(SubscriptionRow row) {
-		return new SubscriptionResponse(row.planId(), row.planName(), row.billingCycle(), row.status(), row.startDate(),
-				row.endDate());
+	private SubscriptionResponse toSubscriptionResponse(SubscriptionRow row) {
+		java.time.LocalDate today = java.time.LocalDate.now(clock.withZone(VIETNAM));
+		Integer daysRemaining = null;
+		boolean isExpiringSoon = false;
+		boolean isOverdue = "OVERDUE".equalsIgnoreCase(row.status());
+
+		if (row.billingCycle() != BillingCycle.LIFETIME && row.endDate() != null) {
+			long diff = java.time.temporal.ChronoUnit.DAYS.between(today, row.endDate());
+			daysRemaining = (int) diff;
+			if (diff >= 0 && diff <= 7) {
+				isExpiringSoon = true;
+			} else if (diff < 0) {
+				isOverdue = true;
+			}
+		}
+
+		return new SubscriptionResponse(
+				row.planId(),
+				row.planName(),
+				row.billingCycle(),
+				row.status(),
+				row.startDate(),
+				row.endDate(),
+				row.isAutoRenew(),
+				daysRemaining,
+				row.trialEndDate(),
+				row.graceUntil(),
+				isExpiringSoon,
+				isOverdue
+		);
+	}
+
+	private com.cxshield.backend.billing.dto.BillingDtos.InvoiceResponse toInvoiceResponse(
+			com.cxshield.backend.billing.BillingRepository.InvoiceRow row) {
+		String pdfUrl = "/api/v1/businesses/" + row.businessId() + "/invoices/" + row.id() + "/pdf";
+		String xmlUrl = "/api/v1/businesses/" + row.businessId() + "/invoices/" + row.id() + "/xml";
+
+		return new com.cxshield.backend.billing.dto.BillingDtos.InvoiceResponse(
+				row.id(),
+				row.businessId(),
+				row.paymentId(),
+				row.invoiceNumber(),
+				row.invoiceNumber(),
+				row.companyName(),
+				row.companyAddress(),
+				row.taxCode(),
+				row.buyerName(),
+				row.billingEmail(),
+				row.subtotal(),
+				row.vatRate(),
+				row.vatAmount(),
+				row.totalAmount(),
+				row.issuedAt(),
+				pdfUrl,
+				xmlUrl
+		);
+	}
+
+	private com.cxshield.backend.billing.dto.BillingDtos.InvoiceResponse synthesizeInvoice(
+			UUID businessId, PaymentRow payment, BillingProfileDto profile) {
+		long total = payment.amount();
+		long subtotal = Math.round(total / 1.10);
+		long vat = total - subtotal;
+		String invNum = "HD-" + payment.transactionCode();
+		java.time.OffsetDateTime issuedAt = payment.paidAt() != null ? payment.paidAt() : java.time.OffsetDateTime.now(clock);
+		String pdfUrl = "/api/v1/businesses/" + businessId + "/invoices/" + payment.id() + "/pdf";
+		String xmlUrl = "/api/v1/businesses/" + businessId + "/invoices/" + payment.id() + "/xml";
+
+		return new com.cxshield.backend.billing.dto.BillingDtos.InvoiceResponse(
+				payment.id(),
+				businessId,
+				payment.id(),
+				payment.transactionCode(),
+				invNum,
+				profile != null ? profile.companyName() : "Khách hàng doanh nghiệp",
+				profile != null ? profile.companyAddress() : "Việt Nam",
+				profile != null ? profile.taxCode() : "",
+				profile != null ? profile.buyerName() : "Chủ cơ sở",
+				profile != null ? profile.billingEmail() : "billing@cxshield.vn",
+				subtotal,
+				10.0,
+				vat,
+				total,
+				issuedAt,
+				pdfUrl,
+				xmlUrl
+		);
 	}
 
 }

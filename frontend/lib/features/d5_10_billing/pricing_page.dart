@@ -110,7 +110,14 @@ class _PricingPageState extends State<PricingPage> {
             const SizedBox(height: AppSpace.lg),
           ],
           if (_subscription?.isActive ?? false) ...[
-            NoticeBanner(message: currentPlanText(_subscription!)),
+            NoticeBanner(
+              message: currentPlanText(_subscription!),
+              action: TextButton.icon(
+                icon: const Icon(Icons.receipt_long_outlined, size: 16),
+                label: const Text('Quản lý thuê bao & hóa đơn'),
+                onPressed: () => context.go('/billing/subscription'),
+              ),
+            ),
             const SizedBox(height: AppSpace.lg),
           ],
           ResponsiveGrid(
