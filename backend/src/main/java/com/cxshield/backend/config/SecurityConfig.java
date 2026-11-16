@@ -36,6 +36,7 @@ public class SecurityConfig {
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 				.requestMatchers("/api/v1/surveys/**", "/api/v1/feedbacks/**").permitAll()
+				.requestMatchers(HttpMethod.GET, "/api/v1/payments/vnpay/**").permitAll()
 				.requestMatchers("/api/**").authenticated()
 				.anyRequest().denyAll())
 			.oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
