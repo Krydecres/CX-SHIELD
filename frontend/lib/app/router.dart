@@ -106,7 +106,6 @@ GoRouter createRouter(SessionController session) {
             ),
           ),
           GoRoute(
-          GoRoute(
             path: _funnelKeywords,
             builder: (context, state) => FunnelSettingsPage(session: session),
           ),
