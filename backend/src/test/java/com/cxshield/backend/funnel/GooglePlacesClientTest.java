@@ -99,4 +99,36 @@ class GooglePlacesClientTest {
 		assertThat(client.lookup(PLACE_ID).result()).isEqualTo(Result.UNAVAILABLE);
 	}
 
+	@Test
+	void lookupStatsReadsRatingAndCount() {
+		server.expect(requestTo("https://places.googleapis.com/v1/places/" + PLACE_ID))
+			.andExpect(header("X-Goog-FieldMask", "rating,userRatingCount"))
+			.andRespond(withSuccess("{\"rating\":4.6,\"userRatingCount\":120}", MediaType.APPLICATION_JSON));
+
+		assertThat(client.lookupStats(PLACE_ID)).contains(new GooglePlacesClient.PlaceStats(120, 4.6));
+	}
+
+	@Test
+	void lookupStatsEmptyWhenPlaceHasNoReviews() {
+		server.expect(requestTo("https://places.googleapis.com/v1/places/" + PLACE_ID))
+			.andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+
+		assertThat(client.lookupStats(PLACE_ID)).isEmpty();
+	}
+
+	@Test
+	void lookupStatsEmptyOnGoogleError() {
+		server.expect(requestTo("https://places.googleapis.com/v1/places/" + PLACE_ID))
+			.andRespond(withStatus(HttpStatus.FORBIDDEN));
+
+		assertThat(client.lookupStats(PLACE_ID)).isEmpty();
+	}
+
+	@Test
+	void lookupStatsEmptyWithoutApiKey() {
+		GooglePlacesClient disabled = new GooglePlacesClient(TestProperties.create(null), RestClient.builder());
+
+		assertThat(disabled.lookupStats(PLACE_ID)).isEmpty();
+	}
+
 }

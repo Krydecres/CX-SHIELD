@@ -59,6 +59,20 @@ class SupabaseDataClientTest {
 	}
 
 	@Test
+	void selectSupportsEmbeddedFilterKeysAndGroupedFilters() {
+		server.expect(requestTo(startsWith(REST_URL + "/metrics?")))
+			.andExpect(queryParam("branches.business_id", "eq.1"))
+			// Ngoặc và dấu phẩy được mã hoá trên URL, PostgREST giải mã lại trước khi đọc bộ lọc.
+			.andExpect(queryParam("and", "%28period_start.gte.2026-11-02%2Cperiod_start.lte.2026-11-06%29"))
+			.andRespond(withSuccess("[]", MediaType.APPLICATION_JSON));
+
+		client.select("token", "metrics",
+				Map.of("branches.business_id", "eq.1", "and", "(period_start.gte.2026-11-02,period_start.lte.2026-11-06)"), ROWS);
+
+		server.verify();
+	}
+
+	@Test
 	void insertAsksForCreatedRow() {
 		server.expect(requestTo(REST_URL + "/review_platforms"))
 			.andExpect(method(HttpMethod.POST))
