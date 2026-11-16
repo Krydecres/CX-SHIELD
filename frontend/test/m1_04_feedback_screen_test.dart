@@ -75,6 +75,9 @@ void main() {
 
     // Xác nhận hiển thị thông báo chuyển tiếp Google Maps của cơ sở
     expect(find.textContaining('Đang mở trang đánh giá chính thức của Maison Coffee & Bistro'), findsOneWidget);
+
+    // E1.4: Xác nhận có nhãn bảo vệ reCAPTCHA ẩn tuân thủ Google Review Gating
+    expect(find.textContaining('Bảo vệ bởi reCAPTCHA ẩn'), findsOneWidget);
   });
 
   testWidgets('E1.3: Kiểm tra dữ liệu - Bắt buộc nhập nội dung góp ý khi bấm Gửi góp ý riêng', (tester) async {

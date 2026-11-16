@@ -54,6 +54,18 @@ class _M104FeedbackScreenState extends State<M104FeedbackScreen> {
   ];
   final Set<String> _selectedTopics = {};
 
+  void _handleBack() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => M101RatingScreen(qrCode: widget.surveyData.qrCode),
+        ),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
