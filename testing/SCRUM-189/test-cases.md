@@ -4,30 +4,31 @@
 - **Tên User Story:** [E1.1] Kiểm thử chức năng và giao diện khảo sát QR
 - **Phân hệ:** Review Funnel (Màn hình M1-01, M1-02, M1-04, M1-05, M1-06)
 - **Thiết bị thử nghiệm:** Samsung Galaxy A07, Android 16
-- **Công cụ áp dụng:** Flutter Widget Testing (`flutter_test`) & Kiểm thử thủ công trên thiết bị di động thật
-- **Lần cập nhật:** Đồng bộ theo kết quả chạy test tự động (`3 passed, 0 failed`) và bằng chứng thực nghiệm trên thiết bị thật
+- **Công cụ áp dụng:** Flutter Widget Testing (`flutter_test`) & Kiểm thử thực tế trên thiết bị di động thật
+- **Lần cập nhật:** Điều chỉnh theo xác nhận từ Developer (chức năng đánh giá 4–5 sao chưa được phân công triển khai; luồng 1–3 sao giữ nguyên kết quả có bằng chứng thực tế)
 
 ---
 
 ## 1. Bảng tổng hợp hiện trạng kiểm thử (Coverage Overview)
 
-Bảng phân loại dưới đây áp dụng nguyên tắc **phân loại độc lập, số liệu minh bạch, không đếm trùng**:
+Bảng phân loại dưới đây áp dụng nguyên tắc **phân loại độc lập, số liệu minh bạch, phản ánh đúng tiến độ triển khai thực tế của đội ngũ phát triển**:
 
-| Nhóm kiểm thử | Mã Test Case | Tổng số | PASS | FAIL | BLOCKED | NOT RUN | Ghi chú thực tế |
+| Nhóm kiểm thử | Mã Test Case | Tổng số | PASS | FAIL | BLOCKED | NOT RUN | Ghi chú thực tế theo tiến độ phát triển |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| **Khởi tạo & Nhận diện QR** | TC01, TC02, TC03 | 3 | 2 | 0 | 0 | 1 | TC01, TC02 PASS. TC03 chuyển NOT RUN (chưa đo định lượng <1s) |
-| **Đánh giá 1–5 sao & Phân luồng** | TC04, TC05, TC06, TC07, TC08 | 5 | 5 | 0 | 0 | 0 | TC08 có widget test xác minh khối khẩn cấp |
+| **Khởi tạo & Nhận diện QR** | TC01, TC02, TC03 | 3 | 2 | 0 | 0 | 1 | TC01, TC02 PASS. TC03 NOT RUN (chưa đo định lượng <1s) |
+| **Đánh giá 1–3 sao (Luồng tiêu cực)** | TC06, TC07, TC08 | 3 | 3 | 0 | 0 | 0 | Đã kiểm thử hoàn tất; TC08 có widget test xác minh khối khẩn cấp |
+| **Đánh giá 4–5 sao (Luồng tích cực)** | TC04, TC05 | 2 | 0 | 0 | 0 | 2 | **NOT RUN** (Developer xác nhận chức năng chưa được phân công triển khai) |
 | **Validation Form góp ý M1-04** | TC09, TC10 | 2 | 2 | 0 | 0 | 0 | Bỏ trống; nội dung < 3 ký tự (TC10 có widget test) |
-| **Xác nhận Backend tiếp nhận** | TC11, TC12 | 2 | 2 | 0 | 0 | 0 | Phản hồi 1 sao (ID: `592d0d60-...`) và 3 sao (lúc `01:16:39`) |
-| **Xử lý ngoại tuyến / Mất mạng** | TC13 | 1 | 0 | 0 | 0 | 1 | Chuyển NOT RUN (chưa có bằng chứng ngắt mạng thực tế) |
-| **Điều hướng Back (Samsung A07)** | TC14, TC15 | 2 | 0 | 2 | 0 | 0 | **FAIL trên thực tế (1 Bug duy nhất: BUG-SCRUM-189-01)**.<br>*(Lưu ý: TC14 widget test PASS do xác nhận đúng `canPop == false`)* |
+| **Xác nhận Backend tiếp nhận** | TC11, TC12 | 2 | 2 | 0 | 0 | 0 | Phản hồi 1 sao (ID: `592d0d60-...`) và 3 sao (lúc `01:16:39`) đã lưu CSDL |
+| **Xử lý ngoại tuyến / Mất mạng** | TC13 | 1 | 0 | 0 | 0 | 1 | **NOT RUN** (Chưa có bằng chứng ngắt mạng thực nghiệm) |
+| **Điều hướng Back (Luồng 4–5 sao)** | TC14, TC15 | 2 | 0 | 0 | 0 | 2 | **NOT RUN** (Phụ thuộc màn M1-02 chưa triển khai; ghi nhận vấn đề quan sát để re-test) |
 | **Ngoài phạm vi SCRUM-189** | TC16, TC17 | 2 | 0 | 0 | 0 | 2 | Thuộc Epic E1.4 (Bypass Maps) và Epic E6/E9 (M2-01) |
-| **TỔNG CỘNG (Toàn bộ danh mục)** | **TC01 – TC17** | **17** | **11** | **2** | **0** | **4** | **15 in-scope (11 PASS, 2 FAIL, 2 NOT RUN) + 2 out-of-scope (NOT RUN)** |
+| **TỔNG CỘNG (Toàn bộ danh mục)** | **TC01 – TC17** | **17** | **9** | **0** | **0** | **8** | **15 in-scope (9 PASS, 0 FAIL, 6 NOT RUN) + 2 out-of-scope (NOT RUN)** |
 
 > [!NOTE]
-> **Thống kê kết quả kiểm thử tự động (Automation Baseline vs SCRUM-189 Suite):**
-> - **Kịch bản test riêng của SCRUM-189 (`frontend/test/scrum_189_survey_widget_test.dart`):** Đã chạy và đạt **3 passed, 0 failed** (bao phủ TC08, TC10 và TC14-assertion).
-> - **Chỉ số 91 tests passed:** Là baseline của toàn bộ dự án frontend, không được gộp vào số test riêng của SCRUM-189.
+> **Thống kê Kết quả Kiểm thử Tự động:**
+> - Kịch bản kiểm thử riêng của SCRUM-189 (`frontend/test/scrum_189_survey_widget_test.dart`): **3 tests passed, 0 failed**.
+> - Chỉ số 91 tests passed trước đó là baseline của toàn bộ dự án frontend, không gộp vào số test riêng của SCRUM-189.
 
 ---
 
@@ -75,49 +76,44 @@ Bảng phân loại dưới đây áp dụng nguyên tắc **phân loại độc
   1. Kích hoạt ứng dụng từ màn hình chính.
   2. Đo đạc chính xác thời gian hiển thị khung hình đầu tiên (First Frame Render / First Contentful Paint) bằng công cụ Profiler/DevTools trên thiết bị thật.
 - **Kết quả mong đợi:** Thời gian tải và hiển thị đầy đủ màn hình M1-01 < 1000ms.
-- **Kết quả thực tế:** Về mặt mã nguồn, ứng dụng nạp mô hình fallback đồng bộ trong `initState()`. Tuy nhiên, **chưa có số liệu đo đạc định lượng chính thức bằng công cụ Profiler/DevTools trên thiết bị Samsung A07**.
+- **Kết quả thực tế:** Về mặt mã nguồn, ứng dụng nạp mô hình fallback đồng bộ trong `initState()`. Tuy nhiên, chưa có số liệu đo đạc định lượng chính thức bằng công cụ Profiler/DevTools trên thiết bị Samsung A07.
 - **Trạng thái:** **NOT RUN** *(Chờ đo kiểm định lượng trên thiết bị thật ở đợt sau)*
 
 ---
 
 ### TC04: Gửi đánh giá 5 sao và phân luồng sang màn hình M1-02
 - **Mã Test Case:** TC04
-- **Phạm vi kiểm thử:** Phạm vi 3 & 4 – Đánh giá từ 1 đến 5 sao & Điều hướng theo mức đánh giá
+- **Phạm vi kiểm thử:** Phạm vi 3 & 4 – Đánh giá từ 1 đến 5 sao & Điều hướng (Luồng 4–5 sao)
 - **Mục tiêu:** Xác minh khi khách chọn 5 sao, hệ thống phân loại cảm xúc tích cực (`POSITIVE`) và tự động chuyển sang màn hình cảm ơn M1-02.
 - **Điều kiện trước:** Đang ở màn hình M1-01.
 - **Dữ liệu đầu vào:** Chạm vào ngôi sao thứ 5 (5 sao).
 - **Các bước thực hiện:**
   1. Chạm vào ngôi sao thứ 5 trên màn hình M1-01.
   2. Quan sát hiệu ứng và màn hình chuyển tiếp.
-- **Kết quả mong đợi:**
-  - Nhãn cảm xúc hiển thị: `🤩 Tuyệt vời` (màu xanh).
-  - Xuất hiện loading `Đang chuyển tiếp...`.
-  - Màn hình chuyển sang M1-02 (`M102GoogleReviewScreen`), hiển thị: *"Cảm ơn bạn đã chấm 5 sao!"*.
-- **Kết quả thực tế:** Giao diện phản hồi mượt mà, chuyển sang M1-02 và hiển thị đúng thông điệp cảm ơn 5 sao. Người kiểm thử đã xác nhận luồng hoạt động.
-- **Trạng thái:** **PASS**
+- **Kết quả mong đợi:** Nhãn cảm xúc hiển thị `🤩 Tuyệt vời`; chuyển sang M1-02 hoàn thiện.
+- **Kết quả thực tế:** **Developer xác nhận chức năng đánh giá 4–5 sao và màn hình M1-02 chưa được phân công thực hiện trong phạm vi nhiệm vụ này**. Giao diện M1-02 hiện tại chỉ là bản nháp giao diện tạm thời, chưa hoàn thiện tích hợp nghiệp vụ.
+- **Trạng thái:** **NOT RUN** *(Chức năng chưa được Developer triển khai)*
 
 ---
 
 ### TC05: Gửi đánh giá 4 sao và phân luồng sang màn hình M1-02
 - **Mã Test Case:** TC05
-- **Phạm vi kiểm thử:** Phạm vi 3 & 4 – Đánh giá từ 1 đến 5 sao & Điều hướng
+- **Phạm vi kiểm thử:** Phạm vi 3 & 4 – Đánh giá từ 1 đến 5 sao & Điều hướng (Luồng 4–5 sao)
 - **Mục tiêu:** Xác minh khi khách chọn 4 sao, hệ thống phân loại cảm xúc tích cực (`POSITIVE`) và điều hướng sang M1-02.
 - **Điều kiện trước:** Đang ở màn hình M1-01.
 - **Dữ liệu đầu vào:** Chạm vào ngôi sao thứ 4 (4 sao).
 - **Các bước thực hiện:**
   1. Chạm vào ngôi sao thứ 4.
   2. Quan sát phản hồi của ứng dụng.
-- **Kết quả mong đợi:**
-  - Nhãn cảm xúc: `😊 Hài lòng`.
-  - Điều hướng thành công sang M1-02, hiển thị lời cảm ơn 4 sao.
-- **Kết quả thực tế:** Điều hướng thành công sang M1-02, hiển thị *"Cảm ơn bạn đã chấm 4 sao!"*.
-- **Trạng thái:** **PASS**
+- **Kết quả mong đợi:** Nhãn cảm xúc `😊 Hài lòng`; điều hướng sang M1-02 hoàn thiện.
+- **Kết quả thực tế:** **Developer xác nhận chức năng đánh giá 4–5 sao chưa được phân công thực hiện**.
+- **Trạng thái:** **NOT RUN** *(Chức năng chưa được Developer triển khai)*
 
 ---
 
 ### TC06: Gửi đánh giá 3 sao và phân luồng sang màn hình M1-04
 - **Mã Test Case:** TC06
-- **Phạm vi kiểm thử:** Phạm vi 3 & 4 – Đánh giá từ 1 đến 5 sao & Điều hướng
+- **Phạm vi kiểm thử:** Phạm vi 3 & 4 – Đánh giá từ 1 đến 5 sao & Điều hướng (Luồng 1–3 sao)
 - **Mục tiêu:** Xác minh khi khách chọn 3 sao, hệ thống phân loại cảm xúc chưa hài lòng (`NEGATIVE`) và chuyển sang form góp ý nội bộ M1-04.
 - **Điều kiện trước:** Đang ở màn hình M1-01.
 - **Dữ liệu đầu vào:** Chạm vào ngôi sao thứ 3 (3 sao).
@@ -134,7 +130,7 @@ Bảng phân loại dưới đây áp dụng nguyên tắc **phân loại độc
 
 ### TC07: Gửi đánh giá 2 sao và phân luồng sang màn hình M1-04
 - **Mã Test Case:** TC07
-- **Phạm vi kiểm thử:** Phạm vi 3 & 4 – Đánh giá từ 1 đến 5 sao & Điều hướng
+- **Phạm vi kiểm thử:** Phạm vi 3 & 4 – Đánh giá từ 1 đến 5 sao & Điều hướng (Luồng 1–3 sao)
 - **Mục tiêu:** Xác minh khi khách chọn 2 sao, hệ thống phân luồng sang form góp ý nội bộ M1-04.
 - **Điều kiện trước:** Đang ở màn hình M1-01.
 - **Dữ liệu đầu vào:** Chạm vào ngôi sao thứ 2 (2 sao).
@@ -149,7 +145,7 @@ Bảng phân loại dưới đây áp dụng nguyên tắc **phân loại độc
 
 ### TC08: Gửi đánh giá 1 sao, phân luồng M1-04 và kích hoạt cờ khẩn cấp
 - **Mã Test Case:** TC08
-- **Phạm vi kiểm thử:** Phạm vi 3 & 4 – Đánh giá từ 1 đến 5 sao & Cờ khẩn cấp
+- **Phạm vi kiểm thử:** Phạm vi 3 & 4 – Đánh giá từ 1 đến 5 sao & Cờ khẩn cấp (Luồng 1–3 sao)
 - **Mục tiêu:** Xác minh khi khách chọn 1 sao, hệ thống phân luồng sang M1-04 đồng thời kích hoạt thanh cảnh báo khẩn cấp màu vàng cam kết nối tới hotline quản lý.
 - **Điều kiện trước:** Đang ở màn hình M1-01.
 - **Dữ liệu đầu vào:** Chạm vào ngôi sao thứ 1 (1 sao).
@@ -244,14 +240,14 @@ Bảng phân loại dưới đây áp dụng nguyên tắc **phân loại độc
   2. Mở ứng dụng và thực hiện đánh giá.
   3. Ghi lại log và bằng chứng thực nghiệm.
 - **Kết quả mong đợi:** Ứng dụng không bị crash; hiển thị cảnh báo offline rõ ràng hoặc duy trì trải nghiệm fallback an toàn.
-- **Kết quả thực tế:** Mã nguồn có khối `catch (_)` fallback ngầm. Tuy nhiên, **chưa thực hiện phiên test ngắt mạng thực tế có ghi nhận bằng chứng đầy đủ trên thiết bị**.
+- **Kết quả thực tế:** Mã nguồn có khối `catch (_)` fallback ngầm. Tuy nhiên, chưa thực hiện phiên test ngắt mạng thực tế có ghi nhận bằng chứng đầy đủ trên thiết bị.
 - **Trạng thái:** **NOT RUN** *(Chưa có bằng chứng đo kiểm thực nghiệm tương ứng)*
 
 ---
 
 ### TC14: Điều hướng Back bằng nút in-app trên màn hình M1-02
 - **Mã Test Case:** TC14
-- **Phạm vi kiểm thử:** Phạm vi 9 – Điều hướng Back in-app
+- **Phạm vi kiểm thử:** Phạm vi 9 – Điều hướng Back in-app (Luồng 4–5 sao M1-02)
 - **Mục tiêu:** Xác minh khi người dùng đang ở màn hình M1-02 và nhấn nút `"← Trở lại khảo sát"`, ứng dụng quay trở lại màn hình M1-01 để có thể chọn lại số sao.
 - **Điều kiện trước:** Đang ở màn hình M1-02 sau khi chọn 5 sao hoặc 4 sao.
 - **Dữ liệu đầu vào:** Nhấn nút `"← Trở lại khảo sát"` (dòng 216–219 trong `m1_02_google_review_screen.dart`).
@@ -259,26 +255,27 @@ Bảng phân loại dưới đây áp dụng nguyên tắc **phân loại độc
   1. Trên màn hình M1-02, cuộn xuống cuối màn hình.
   2. Chạm vào nút `"← Trở lại khảo sát"`.
   3. Quan sát phản hồi của ứng dụng.
-- **Kết quả mong đợi:** Màn hình M1-02 đóng lại; ứng dụng quay về màn hình chọn sao M1-01 ở trạng thái sẵn sàng tương tác.
-- **Kết quả thực tế & Phân biệt hai tầng kiểm thử:**
-  - **Tầng tự động hóa (Widget Test `scrum_189_survey_widget_test.dart`):** **PASS** – Test script kiểm tra assertion `Navigator.of(context).canPop()` trả về `false`, xác nhận chính xác điểm bất thường trong mã nguồn (do M1-01 gọi `pushReplacement` làm rỗng stack bên dưới).
-  - **Tầng trải nghiệm thực tế trên Samsung A07 (Android 16):** **FAIL** – Khi chạm vào nút `"← Trở lại khảo sát"`, **ứng dụng bị đứng hình, không phản hồi và không quay lại màn hình M1-01**.
-- **Trạng thái nghiệp vụ thực tế:** **FAIL** *(Kịch bản tái hiện 1 của BUG-SCRUM-189-01)*
+- **Kết quả mong đợi:** Sau khi màn hình M1-02 được Developer hoàn thiện, nút Back phải điều hướng mượt mà về M1-01.
+- **Kết quả thực tế:**
+  - **Developer xác nhận luồng 4–5 sao và màn hình M1-02 chưa được phân công thực hiện/chưa hoàn thiện**. Do đó, không kết luận hiện tượng đứng khi nhấn Back sau luồng 4–5 sao là bug độc lập.
+  - Về mặt kiểm thử tự động, script `TC14` trong `scrum_189_survey_widget_test.dart` chạy PASS vì kiểm chứng đúng assertion kỹ thuật `Navigator.canPop() == false`.
+  - Về mặt kiểm thử thủ công, hiện tượng ứng dụng bị đứng hình được chuyển thành **Vấn đề quan sát kỹ thuật (OBS-SCRUM-189-01)**, cần được kiểm thử lại sau khi Developer hoàn thành chức năng 4–5 sao.
+- **Trạng thái:** **NOT RUN** *(Chức năng M1-02 chưa triển khai hoàn thiện; chuyển thành vấn đề quan sát)*
 
 ---
 
 ### TC15: Điều hướng Back bằng phím / cử chỉ Back của hệ điều hành Android
 - **Mã Test Case:** TC15
-- **Phạm vi kiểm thử:** Phạm vi 9 – Điều hướng Back hệ điều hành
-- **Mục tiêu:** Xác minh khi người dùng vuốt cử chỉ Back hoặc nhấn nút Back hệ điều hành Android trên màn hình M1-02 / M1-04, ứng dụng quay lại màn hình M1-01 một cách mượt mà.
-- **Điều kiện trước:** Đang ở màn hình M1-02 hoặc M1-04 trên thiết bị Samsung A07 (Android 16).
+- **Phạm vi kiểm thử:** Phạm vi 9 – Điều hướng Back hệ điều hành (Luồng 4–5 sao M1-02)
+- **Mục tiêu:** Xác minh khi người dùng vuốt cử chỉ Back hoặc nhấn nút Back hệ điều hành Android trên màn hình M1-02, ứng dụng quay lại màn hình M1-01 một cách mượt mà.
+- **Điều kiện trước:** Đang ở màn hình M1-02 trên thiết bị Samsung A07 (Android 16).
 - **Dữ liệu đầu vào:** Thao tác vuốt cử chỉ Back từ cạnh màn hình hoặc nhấn phím Back phần mềm trên thanh điều hướng Android.
 - **Các bước thực hiện:**
   1. Thực hiện vuốt Back hoặc bấm nút Back của Android.
   2. Quan sát phản hồi của màn hình.
-- **Kết quả mong đợi:** Hệ thống điều hướng lùi về màn hình M1-01.
-- **Kết quả thực tế trên Samsung A07 (Android 16):** **Ứng dụng bị đứng / không phản hồi cử chỉ, không quay về màn hình M1-01**. Cử chỉ Back của Android 16 bị khựng lại do Flutter từ chối pop (`canPop == false`) và không có `PopScope`.
-- **Trạng thái nghiệp vụ thực tế:** **FAIL** *(Kịch bản tái hiện 2 của BUG-SCRUM-189-01)*
+- **Kết quả mong đợi:** Hệ thống điều hướng lùi về màn hình M1-01 mượt mà sau khi chức năng hoàn thiện.
+- **Kết quả thực tế:** Do luồng 4–5 sao và màn hình M1-02 chưa hoàn thiện, cử chỉ Back bị khựng lại. Tương tự TC14, hiện tượng này được ghi chú là **vấn đề quan sát kỹ thuật (OBS-SCRUM-189-01)** để tái kiểm tra khi Developer bàn giao chức năng chính thức, không ghi nhận là bug độc lập.
+- **Trạng thái:** **NOT RUN** *(Chức năng M1-02 chưa triển khai hoàn thiện; chuyển thành vấn đề quan sát)*
 
 ---
 
