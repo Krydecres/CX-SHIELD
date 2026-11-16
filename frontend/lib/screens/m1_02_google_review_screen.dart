@@ -198,7 +198,7 @@ class _M102GoogleReviewScreenState extends State<M102GoogleReviewScreen> {
                                   SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
-                                      'Gợi ý nhận xét (tự do chỉnh sửa)',
+                                      'Gợi ý nhận xét (tự động copy)',
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w700,
