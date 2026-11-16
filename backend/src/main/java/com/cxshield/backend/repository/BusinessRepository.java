@@ -20,6 +20,11 @@ public class BusinessRepository {
     private static final ParameterizedTypeReference<List<Business>> BUSINESS_ROWS = new ParameterizedTypeReference<>() {};
 
     private final SupabaseAdminClient supabase;
+    private final Map<UUID, Business> store = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public BusinessRepository() {
+        this(null);
+    }
 
     public BusinessRepository(SupabaseAdminClient supabase) {
         this.supabase = supabase;
@@ -29,16 +34,23 @@ public class BusinessRepository {
         if (id == null) {
             return Optional.empty();
         }
-        return supabase.select("businesses", Map.of("id", "eq." + id), BUSINESS_ROWS)
-                .stream()
-                .findFirst();
+        if (supabase != null) {
+            return supabase.select("businesses", Map.of("id", "eq." + id), BUSINESS_ROWS)
+                    .stream()
+                    .findFirst();
+        }
+        return Optional.ofNullable(store.get(id));
     }
 
     public Business save(Business business) {
         if (business.getId() == null) {
             business.setId(UUID.randomUUID());
         }
-        supabase.upsert("businesses", "id", business);
+        if (supabase != null) {
+            supabase.upsert("businesses", "id", business);
+        } else {
+            store.put(business.getId(), business);
+        }
         return business;
     }
 }

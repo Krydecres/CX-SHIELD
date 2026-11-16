@@ -83,18 +83,6 @@ class _M104FeedbackScreenState extends State<M104FeedbackScreen> {
     }
   }
 
-  void _handleBack() {
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
-    } else {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => M101RatingScreen(qrCode: widget.surveyData.qrCode),
-        ),
-      );
-    }
-  }
-
   @override
   void dispose() {
     _voiceService.stopListening();
@@ -223,18 +211,6 @@ class _M104FeedbackScreenState extends State<M104FeedbackScreen> {
     }
   }
 
-  void _handleBack() {
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
-    } else {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => M101RatingScreen(qrCode: widget.surveyData.qrCode),
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final stars = widget.rateResult.starRating;
@@ -262,7 +238,6 @@ class _M104FeedbackScreenState extends State<M104FeedbackScreen> {
           backgroundColor: Colors.white,
           elevation: 0.5,
         ),
-      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(

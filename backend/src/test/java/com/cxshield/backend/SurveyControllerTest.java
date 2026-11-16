@@ -17,6 +17,8 @@ import com.cxshield.backend.repository.BranchRepository;
 import com.cxshield.backend.repository.BusinessRepository;
 import com.cxshield.backend.repository.QrCodeRepository;
 import com.cxshield.backend.repository.ReviewPlatformRepository;
+import com.cxshield.backend.repository.ReviewKeywordRepository;
+import com.cxshield.backend.repository.RoutingRuleRepository;
 import com.cxshield.backend.repository.SurveyResponseRepository;
 import com.cxshield.backend.repository.SurveySessionRepository;
 import com.cxshield.backend.service.SurveyService;
@@ -127,6 +129,8 @@ class SurveyControllerTest {
         surveySessionRepository = new SurveySessionRepository(supabase);
         surveyResponseRepository = new SurveyResponseRepository(supabase);
         ReviewPlatformRepository reviewPlatformRepository = new ReviewPlatformRepository(supabase);
+        RoutingRuleRepository routingRuleRepository = new RoutingRuleRepository();
+        ReviewKeywordRepository reviewKeywordRepository = new ReviewKeywordRepository();
 
         surveyService = new SurveyServiceImpl(
                 qrCodeRepository,
@@ -134,7 +138,9 @@ class SurveyControllerTest {
                 businessRepository,
                 surveySessionRepository,
                 surveyResponseRepository,
-                reviewPlatformRepository
+                reviewPlatformRepository,
+                routingRuleRepository,
+                reviewKeywordRepository
         );
         surveyController = new SurveyController(surveyService);
     }

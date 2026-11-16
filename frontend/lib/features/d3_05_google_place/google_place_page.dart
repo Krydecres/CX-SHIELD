@@ -240,6 +240,9 @@ class _GooglePlacePageState extends State<GooglePlacePage> {
                   ),
                 ),
                 const SizedBox(height: 20),
+              ] else ...[
+                _FunnelTabBar(currentPath: '/funnel/google-place'),
+                const SizedBox(height: 20),
               ],
               Text('Thiết lập Google Business Profile', style: theme.textTheme.headlineSmall),
               const SizedBox(height: 6),
@@ -507,6 +510,86 @@ class StatusChip extends StatelessWidget {
           const SizedBox(width: 6),
           Text(status.label, style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12.5)),
         ],
+      ),
+    );
+  }
+}
+
+class _FunnelTabBar extends StatelessWidget {
+  const _FunnelTabBar({required this.currentPath});
+
+  final String currentPath;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: context.colors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _TabItem(
+            label: 'Google Place ID (D3-05)',
+            icon: Icons.place_outlined,
+            selected: currentPath == '/funnel/google-place',
+            onTap: () => context.go('/funnel/google-place'),
+          ),
+          Container(width: 1, height: 32, color: context.colors.border),
+          _TabItem(
+            label: 'Từ khóa SEO & Phân luồng (D3-07)',
+            icon: Icons.tune_rounded,
+            selected: currentPath == '/funnel/keywords',
+            onTap: () => context.go('/funnel/keywords'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TabItem extends StatelessWidget {
+  const _TabItem({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? context.colors.accent : context.colors.textSecondary;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? context.colors.accent.withValues(alpha: 0.08) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,22 +1,8 @@
 package com.cxshield.backend.service.impl;
 
-import com.cxshield.backend.dto.PublicBypassRequestDto;
-import com.cxshield.backend.dto.PublicBypassResponseDto;
-import com.cxshield.backend.dto.RateRequestDto;
-import com.cxshield.backend.dto.RateResultDto;
-import com.cxshield.backend.dto.SurveyInitResponseDto;
-import com.cxshield.backend.entity.Branch;
-import com.cxshield.backend.entity.Business;
-import com.cxshield.backend.entity.QrCode;
-import com.cxshield.backend.entity.ReviewPlatform;
-import com.cxshield.backend.entity.SurveyResponse;
-import com.cxshield.backend.entity.SurveySession;
-import com.cxshield.backend.repository.BranchRepository;
-import com.cxshield.backend.repository.BusinessRepository;
-import com.cxshield.backend.repository.QrCodeRepository;
-import com.cxshield.backend.repository.ReviewPlatformRepository;
-import com.cxshield.backend.repository.SurveyResponseRepository;
-import com.cxshield.backend.repository.SurveySessionRepository;
+import com.cxshield.backend.dto.*;
+import com.cxshield.backend.entity.*;
+import com.cxshield.backend.repository.*;
 import com.cxshield.backend.service.SurveyService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +10,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class SurveyServiceImpl implements SurveyService {
@@ -37,6 +25,8 @@ public class SurveyServiceImpl implements SurveyService {
     private final SurveySessionRepository surveySessionRepository;
     private final SurveyResponseRepository surveyResponseRepository;
     private final ReviewPlatformRepository reviewPlatformRepository;
+    private final RoutingRuleRepository routingRuleRepository;
+    private final ReviewKeywordRepository reviewKeywordRepository;
 
     public SurveyServiceImpl(
             QrCodeRepository qrCodeRepository,
@@ -44,13 +34,17 @@ public class SurveyServiceImpl implements SurveyService {
             BusinessRepository businessRepository,
             SurveySessionRepository surveySessionRepository,
             SurveyResponseRepository surveyResponseRepository,
-            @Qualifier("surveyReviewPlatformRepository") ReviewPlatformRepository reviewPlatformRepository) {
+            @Qualifier("surveyReviewPlatformRepository") ReviewPlatformRepository reviewPlatformRepository,
+            RoutingRuleRepository routingRuleRepository,
+            ReviewKeywordRepository reviewKeywordRepository) {
         this.qrCodeRepository = qrCodeRepository;
         this.branchRepository = branchRepository;
         this.businessRepository = businessRepository;
         this.surveySessionRepository = surveySessionRepository;
         this.surveyResponseRepository = surveyResponseRepository;
         this.reviewPlatformRepository = reviewPlatformRepository;
+        this.routingRuleRepository = routingRuleRepository;
+        this.reviewKeywordRepository = reviewKeywordRepository;
     }
 
     @Override
@@ -61,17 +55,17 @@ public class SurveyServiceImpl implements SurveyService {
             throw new IllegalArgumentException("Mã QR không hợp lệ hoặc bị trống");
         }
 
-        // 1. Tìm mã QR trong CSDL Supabase (Bỏ chi nhánh mẫu và việc tự tạo mã QR; không tìm thấy báo lỗi)
+        // 1. Tìm mã QR trong CSDL Supabase
         QrCode qrCode = qrCodeRepository.findByCode(qrCodeValue.trim())
                 .orElseThrow(() -> new IllegalArgumentException("Mã QR không tồn tại trong hệ thống: " + qrCodeValue));
 
-        // 2. Lấy thông tin Chi nhánh & Cơ sở
+        // 2. Tìm chi nhánh & cơ sở tương ứng
         Branch branch = branchRepository.findById(qrCode.getBranchId())
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy chi nhánh cho mã QR này"));
         Business business = businessRepository.findById(branch.getBusinessId())
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy cơ sở kinh doanh"));
 
-        // 3. Tạo survey_session mới ghi nhận lượt quét vào Supabase (Bắt buộc business_id, status STARTED)
+        // 3. Tạo survey_session mới ghi nhận lượt quét vào Supabase
         SurveySession session = new SurveySession();
         session.setBusinessId(business.getId());
         session.setBranchId(branch.getId());
@@ -79,10 +73,9 @@ public class SurveyServiceImpl implements SurveyService {
         session.setTableOrAreaCode(qrCode.getName());
         session.setClientIp(clientIp);
         session.setUserAgent(userAgent);
-        session.setStatus("STARTED");
         surveySessionRepository.save(session);
 
-        // 4. Trả về DTO hiển thị cho màn hình M1-01
+        // 4. Trả về DTO khởi tạo cho màn hình M1-01
         SurveyInitResponseDto dto = new SurveyInitResponseDto();
         dto.setSessionId(session.getId());
         dto.setQrCode(qrCode.getCode());
@@ -110,8 +103,14 @@ public class SurveyServiceImpl implements SurveyService {
                 .orElseThrow(() -> new IllegalArgumentException("Phiên khảo sát không tồn tại hoặc đã hết hạn"));
 
         int stars = requestDto.getStarRating();
-        boolean isPositive = stars >= 4;
-        // Đổi sentiment_group: CSDL chỉ nhận SATISFIED / UNSATISFIED
+        UUID businessId = session.getBusinessId();
+
+        // E4.3: Đọc quy tắc phân luồng cảm xúc theo cơ sở từ routing_rules
+        RoutingRule routingRule = routingRuleRepository != null
+                ? routingRuleRepository.findByBusinessId(businessId).orElse(new RoutingRule(businessId, 4, 5, true))
+                : new RoutingRule(businessId, 4, 5, true);
+
+        boolean isPositive = routingRule.isSatisfied(stars);
         String sentimentGroup = isPositive ? "SATISFIED" : "UNSATISFIED";
 
         // Cập nhật trạng thái phiên khảo sát về đúng enum session_status: COMPLETED
@@ -120,7 +119,7 @@ public class SurveyServiceImpl implements SurveyService {
         session.setUpdatedAt(Instant.now());
         surveySessionRepository.save(session);
 
-        // Lưu bản ghi kết quả đánh giá survey_responses vào Supabase (Bắt buộc business_id)
+        // Lưu bản ghi kết quả đánh giá survey_responses vào Supabase
         SurveyResponse response = new SurveyResponse();
         response.setBusinessId(session.getBusinessId());
         response.setSessionId(session.getId());
@@ -137,16 +136,32 @@ public class SurveyServiceImpl implements SurveyService {
             hotline = branch.getHotline();
         }
 
-        // Định tuyến theo quy tắc nghiệp vụ:
-        // 4-5 sao -> M1-02 (Google Maps)
-        // 1-3 sao -> M1-04 (Form góp ý nội bộ)
-        // 1 sao -> M1-05 (Có thể liên hệ hotline hoặc yêu cầu quản lý gọi lại ngay)
+        // E4.3: Lấy danh sách từ khóa gợi ý SEO đang kích hoạt cho màn M1-02
+        List<String> keywords = List.of();
+        if (reviewKeywordRepository != null) {
+            keywords = reviewKeywordRepository.findByBusinessIdAndActiveTrue(businessId)
+                    .stream()
+                    .map(ReviewKeyword::getKeyword)
+                    .collect(Collectors.toList());
+        }
+
+        if (keywords.isEmpty()) {
+            keywords = List.of(
+                    "Cà phê đậm đà ngon",
+                    "Không gian ấm cúng, view đẹp",
+                    "Nhân viên nhiệt tình, chu đáo",
+                    "Phục vụ nhanh chóng"
+            );
+        }
+
         RateResultDto result = new RateResultDto();
         result.setResponseId(response.getId());
         result.setSessionId(session.getId());
         result.setStarRating(stars);
         result.setSentimentGroup(sentimentGroup);
         result.setHotline(hotline);
+        result.setSuggestedKeywords(keywords);
+        result.setPublicReviewEnabled(routingRule.isPublicReviewEnabled());
 
         if (isPositive) {
             result.setTargetScreen("M1-02");

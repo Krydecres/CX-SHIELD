@@ -8,6 +8,7 @@ import '../features/d3_00_admin_shell/coming_soon_page.dart';
 import '../features/d3_01_auth/auth_page.dart';
 import '../features/d3_02_onboarding/onboarding_page.dart';
 import '../features/d3_05_google_place/google_place_page.dart';
+import '../features/d3_07_funnel_settings/funnel_settings_page.dart';
 import '../features/d3_09_qr_studio/d3_09_qr_studio_page.dart';
 import '../features/d3_11_print_nfc/d3_11_print_nfc_page.dart';
 import '../features/d4_01_alert_channels/alert_channels_page.dart';
@@ -26,6 +27,7 @@ const _onboarding = '/onboarding';
 const _dashboard = '/dashboard';
 const _googlePlace = '/funnel/google-place';
 const _printMaterials = '/print-materials';
+const _funnelKeywords = '/funnel/keywords';
 const _alertChannels = '/alerts/channels';
 const _billingPlans = '/billing/plans';
 const _billingSubscription = '/billing/subscription';
@@ -33,7 +35,7 @@ const _billingCheckout = '$_billingPlans/checkout';
 const _billingResult = '$_billingPlans/result';
 
 /// Các mục menu đã có màn thật; mục còn lại hiện trang "Sắp ra mắt".
-const _builtPages = {_dashboard, _googlePlace, _printMaterials, _alertChannels, _billingPlans, _billingSubscription};
+const _builtPages = {_dashboard, _googlePlace, _funnelKeywords, _printMaterials, _alertChannels, _billingPlans, _billingSubscription};
 
 /// Điều hướng theo trạng thái phiên:
 /// chưa đăng nhập → D3-01; đăng nhập nhưng chưa có cơ sở → D3-02; đã có cơ sở → khung admin (mặc định D5-01).
@@ -102,6 +104,11 @@ GoRouter createRouter(SessionController session) {
               session: session,
               isOnboardingStep: state.uri.queryParameters['step'] == 'onboarding',
             ),
+          ),
+          GoRoute(
+          GoRoute(
+            path: _funnelKeywords,
+            builder: (context, state) => FunnelSettingsPage(session: session),
           ),
           GoRoute(
             path: _printMaterials,

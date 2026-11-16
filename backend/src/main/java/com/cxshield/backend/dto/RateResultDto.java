@@ -1,5 +1,7 @@
 package com.cxshield.backend.dto;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class RateResultDto {
@@ -12,6 +14,8 @@ public class RateResultDto {
     private String message;
     private String hotline;
     private String googleReviewUrl;
+    private List<String> suggestedKeywords = new ArrayList<>();
+    private boolean publicReviewEnabled = true;
 
     public RateResultDto() {}
 
@@ -33,5 +37,8 @@ public class RateResultDto {
     public void setHotline(String hotline) { this.hotline = hotline; }
     public String getGoogleReviewUrl() { return googleReviewUrl; }
     public void setGoogleReviewUrl(String googleReviewUrl) { this.googleReviewUrl = googleReviewUrl; }
+    public List<String> getSuggestedKeywords() { return suggestedKeywords; }
+    public void setSuggestedKeywords(List<String> suggestedKeywords) { this.suggestedKeywords = suggestedKeywords; }
+    public boolean isPublicReviewEnabled() { return publicReviewEnabled; }
+    public void setPublicReviewEnabled(boolean publicReviewEnabled) { this.publicReviewEnabled = publicReviewEnabled; }
 }
-

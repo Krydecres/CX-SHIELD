@@ -66,3 +66,13 @@ ALTER TABLE feedback_topic_links
 ALTER TABLE feedback_topic_links
     ADD CONSTRAINT fk_topic_links_topic
     FOREIGN KEY (topic_id) REFERENCES feedback_topics(id) ON DELETE CASCADE;
+
+-- Liên kết review_keywords -> businesses (E4.3)
+ALTER TABLE review_keywords
+    ADD CONSTRAINT fk_review_keywords_business
+    FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
+
+-- Liên kết routing_rules -> businesses (E4.3)
+ALTER TABLE routing_rules
+    ADD CONSTRAINT fk_routing_rules_business
+    FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE;
