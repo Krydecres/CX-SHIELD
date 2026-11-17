@@ -28,11 +28,11 @@ Khi thực hiện kiểm thử mã nguồn và API contract cho phân hệ Googl
 
 ### 2. Bằng chứng kiểm thử tự động (Proof of Concept / Repro Evidence)
 Trong bài test tự động `GooglePlaceContractSecurityTest.rateLimitingVerificationShowsNotImplemented()`:
-- Client giả lập gửi dồn dập **10 request liên tiếp** tới endpoint `/api/v1/branches/{branchId}/google-place/verifications` trong cùng 1 giây với cùng một Bearer token.
+- Client gửi **10 request xác minh tuần tự** trong vòng lặp kiểm thử (không đo thời gian thực chính xác) tới endpoint `/api/v1/branches/{branchId}/google-place/verifications` với cùng một Bearer token.
 - **Kết quả đo lường thực tế:**
   - Số request trả về HTTP 200 OK: **10/10** (100%).
   - Số request bị chặn với HTTP 429 Too Many Requests: **0/10** (0%).
-  - Thời gian phản hồi không hề có cơ chế làm trễ hay từ chối phục vụ.
+  - Backend không có cơ chế làm trễ hay từ chối phục vụ khi nhận request dồn dập.
 
 ### 3. Đánh giá rủi ro và mức độ ảnh hưởng (Impact Analysis)
 1. **Lãng phí chi phí & Hết hạn ngạch Google Places API:**

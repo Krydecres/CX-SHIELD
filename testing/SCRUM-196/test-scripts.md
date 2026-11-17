@@ -12,7 +12,7 @@
 
 | STT | Tệp kiểm thử | Đường dẫn tệp | Loại kiểm thử | Số lượng test | Phạm vi & Trách nhiệm kiểm thử |
 | :---: | :--- | :--- | :---: | :---: | :--- |
-| **1** | `GooglePlaceContractSecurityTest.java` | `backend/src/test/java/com/cxshield/backend/funnel/GooglePlaceContractSecurityTest.java` | **Integration & Contract Test (MockMvc)** | **18** | **Tệp test mới được phát triển cho SCRUM-196:**<br>- Xác thực Bearer JWT token (401)<br>- Phân quyền chi nhánh & RLS (404/403)<br>- API Contract toàn bộ 3 endpoints GET/POST/PUT<br>- Input validation (400 `VALIDATION_ERROR`, `INVALID_PLACE_ID`, `INVALID_REVIEW_URL`)<br>- Xử lý kết quả Google API (`CONNECTED`, `ERROR`, `PENDING`)<br>- Xử lý lỗi 422 `PLACE_NOT_FOUND`<br>- Xử lý ngoại lệ 500 unhandled exception<br>- Kiểm chứng hiện trạng Rate Limiting (chứng minh chưa có) |
+| **1** | `GooglePlaceContractSecurityTest.java` | `backend/src/test/java/com/cxshield/backend/funnel/GooglePlaceContractSecurityTest.java` | **Integration & Contract Test (MockMvc)** | **18** | **Tệp test mới được phát triển cho SCRUM-196:**<br>- Xác thực Bearer JWT token (401)<br>- Phân quyền chi nhánh & RLS (404/403 mock contract)<br>- API Contract toàn bộ 3 endpoints GET/POST/PUT<br>- Input validation (400 `VALIDATION_ERROR`, `INVALID_PLACE_ID`, `INVALID_REVIEW_URL`)<br>- Xử lý kết quả Google API (`CONNECTED`, `ERROR`, `PENDING`)<br>- Xử lý lỗi 422 `PLACE_NOT_FOUND`<br>- Xử lý ngoại lệ 500 unhandled exception<br>- Kiểm chứng hiện trạng Rate Limiting (chứng minh chưa có) |
 | **2** | `GooglePlaceServiceTest.java` | `backend/src/test/java/com/cxshield/backend/funnel/GooglePlaceServiceTest.java` | Unit Test (Mockito) | 10 | Kiểm thử nghiệp vụ tầng Service: `getConfig`, `verify`, `save`, mapping data, xử lý RLS block. |
 | **3** | `GooglePlacesClientTest.java` | `backend/src/test/java/com/cxshield/backend/funnel/GooglePlacesClientTest.java` | Unit Test (MockRestServiceServer) | 13 | Mock lệnh gọi HTTP ra Google Places API New: 200 OK, 400/404 NOT_FOUND, 403/429/500 UNAVAILABLE, timeout/I/O exception. |
 | **4** | `PlaceIdParserTest.java` | `backend/src/test/java/com/cxshield/backend/funnel/PlaceIdParserTest.java` | Unit Test (Parameterized) | 18 | Kiểm thử regex chuẩn hoá Place ID, trích xuất ID từ link Google Maps dán vào, kiểm tra URL đánh giá hợp lệ. |
@@ -26,6 +26,8 @@
 ---
 
 ## 2. Danh mục 18 Automation Tests trong `GooglePlaceContractSecurityTest.java`
+
+Đồng bộ chính xác 1:1 với 18 test cases thiết kế:
 
 ```java
 // Package: com.cxshield.backend.funnel
@@ -41,10 +43,10 @@
    -> PUT /api/v1/branches/{branchId}/google-place không token trả về HTTP 401 Unauthorized.
 
 4. getForInaccessibleBranchReturns404()
-   -> GET với branchId không có quyền hoặc không tồn tại trả về HTTP 404 với mã "BRANCH_NOT_FOUND".
+   -> GET với branchId không có quyền hoặc không tồn tại trả về HTTP 404 mã "BRANCH_NOT_FOUND" (API contract/response test; Live RLS: NOT RUN).
 
 5. saveForbiddenWhenUserLacksManagementPermission()
-   -> PUT lưu cấu hình bởi user không có quyền quản lý trả về HTTP 403 với mã "FORBIDDEN".
+   -> PUT lưu cấu hình bởi user không có quyền quản lý trả về HTTP 403 mã "FORBIDDEN" (API contract/response test; Live RLS: NOT RUN).
 
 6. getConfigReturnsValidSchemaAnd200()
    -> GET cấu hình thành công trả về HTTP 200 và JSON Schema khớp toàn bộ các trường của GooglePlaceConfigResponse.
@@ -83,7 +85,7 @@
     -> Ngoại lệ máy chủ chưa kiểm soát được bắt bởi GlobalExceptionHandler, trả về HTTP 500 theo schema ApiResponse chuẩn.
 
 18. rateLimitingVerificationShowsNotImplemented()
-    -> Gửi liên tiếp 10 request xác minh và kiểm chứng 10/10 đều nhận 200 OK, 0 request bị chặn 429 -> Bằng chứng tự động xác nhận backend chưa triển khai Rate Limiting.
+    -> Gửi 10 request xác minh tuần tự trong vòng lặp kiểm thử (không đo thời gian thực chính xác); 10/10 đều nhận 200 OK, 0 request bị chặn 429 -> Bằng chứng tự động xác nhận backend chưa triển khai Rate Limiting.
 ```
 
 ---
