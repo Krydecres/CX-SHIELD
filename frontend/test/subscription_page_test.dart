@@ -202,6 +202,35 @@ void main() {
     });
   });
 
+  group('Dữ liệu mẫu trạng thái thuê bao SCRUM-251', () {
+    testWidgets('hiển thị nhãn đúng cho từng trạng thái thuê bao', (tester) async {
+      final samples = <(String, String)>[
+        ('ACTIVE', 'Đang hoạt động'),
+        ('TRIAL', 'Dùng thử'),
+        ('OVERDUE', 'Quá hạn'),
+        ('EXPIRED', 'Hết hạn'),
+        ('CANCELLED', 'Đã huỷ'),
+      ];
+
+      for (final (status, expectedLabel) in samples) {
+        routes['/api/v1/businesses/biz/subscription'] = {
+          'planId': 'p2',
+          'planName': 'Nâng cao',
+          'billingCycle': 'MONTHLY',
+          'status': status,
+          'startDate': '2026-11-01',
+          'endDate': '2026-12-01',
+          'autoRenew': false,
+          'daysRemaining': 22,
+          'isExpiringSoon': false,
+          'isOverdue': status == 'OVERDUE',
+        };
+
+        await showPage(tester, SubscriptionPage(session: createSession()));
+        expect(find.text(expectedLabel), findsOneWidget, reason: 'status=$status');
+      }
+    });
+  });
   group('Màn hình D5-12 SubscriptionPage', () {
     testWidgets('hiển thị thông tin gói hiện tại và số ngày còn lại', (tester) async {
       final session = createSession();
