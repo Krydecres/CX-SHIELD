@@ -287,6 +287,27 @@ void main() {
       expect(find.text('Đã tắt tự động gia hạn gói dịch vụ.'), findsOneWidget);
     });
 
+    testWidgets('bật lại tự động gia hạn gọi API cập nhật', (tester) async {
+      routes['/api/v1/businesses/biz/subscription'] = {
+        'planId': 'p2', 'planName': 'Nâng cao', 'billingCycle': 'MONTHLY',
+        'status': 'ACTIVE', 'startDate': '2026-11-01', 'endDate': '2026-12-01',
+        'autoRenew': false, 'daysRemaining': 22, 'isExpiringSoon': false, 'isOverdue': false,
+      };
+      routes['/api/v1/businesses/biz/subscription/auto-renew'] = {
+        'planId': 'p2', 'planName': 'Nâng cao', 'billingCycle': 'MONTHLY',
+        'status': 'ACTIVE', 'startDate': '2026-11-01', 'endDate': '2026-12-01',
+        'autoRenew': true, 'daysRemaining': 22, 'isExpiringSoon': false, 'isOverdue': false,
+      };
+
+      final session = createSession();
+      await showPage(tester, SubscriptionPage(session: session));
+      await tester.tap(find.byType(Switch));
+      await tester.pumpAndSettle();
+
+      final putReq = requests.firstWhere((r) => r.method == 'PUT' && r.url.path.contains('/subscription/auto-renew'));
+      expect(jsonDecode(putReq.body), {'autoRenew': true});
+      expect(find.text('Đã bật tự động gia hạn gói dịch vụ.'), findsOneWidget);
+    });
     testWidgets('hiển thị bảng lịch sử giao dịch và nút tải hóa đơn PDF / XML', (tester) async {
       String? openedUrl;
       final session = createSession();
