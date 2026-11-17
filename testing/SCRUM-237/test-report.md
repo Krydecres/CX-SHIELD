@@ -6,7 +6,7 @@
 **Task code Ä‘á»‘i á»©ng:** SCRUM-214 (ÄÃ£ hoÃ n thÃ nh vÃ  merge vÃ o `main` táº¡i commit `b819682`)
 **Repository:** `Krydecres/CX-SHIELD`
 **NhÃ¡nh:** `main`
-**NgÃ y thá»±c hiá»‡n:** 17/11/2026
+**NgÃ y thá»±c hiá»‡n & RÃ  soÃ¡t cuá»‘i:** 17/11/2026
 **MÃ´i trÆ°á»ng:** Java 21 / Apache Maven 3.8+ / Spring Boot Unit Test
 
 ---
@@ -17,13 +17,13 @@
 |---|---|---|---|
 | **Tá»•ng sá»‘ Test Cases thiáº¿t káº¿** | **16** | **100%** | Bao phá»§ toÃ n bá»™ pháº¡m vi SCRUM-237 |
 | **â€¢ PASS** | **13** | **81.25%** | ÄÃ¡p á»©ng Ä‘Ãºng yÃªu cáº§u thiáº¿t káº¿ vÃ  nghiá»‡p vá»¥ |
-| **â€¢ FAIL** | **3** | **18.75%** | PhÃ¡t hiá»‡n sai lá»‡ch chuáº©n PDF vÃ  há»Ÿ phÃ¢n quyá»n tenant |
+| **â€¢ FAIL** | **3** | **18.75%** | PhÃ¡t hiá»‡n sai lá»‡ch chuáº©n PDF vÃ  2 lá»— há»•ng báº£o máº­t tenant |
 | **â€¢ BLOCKED** | **0** | **0%** | KhÃ´ng cÃ³ test case nÃ o bá»‹ ngháº½n |
 | **â€¢ NOT RUN** | **0** | **0%** | Cháº¡y Ä‘áº§y Ä‘á»§ 16/16 test cases trÃªn test suite |
 
 ### Thá»‘ng kÃª thá»±c thi Automated Unit Tests
 - **Bá»™ kiá»ƒm thá»­ mÃ£ nguá»“n má»›i (`PrintNfcSourceTest.java`):**
-  - **28/28 tests passed** (Bao gá»“m 15 bÃ i test tiÃªu chuáº©n vÃ  13 láº§n cháº¡y tham sá»‘ hÃ³a `@ParameterizedTest` cho kiá»ƒm tra biá»ƒu thá»©c chÃ­nh quy sá»‘ Ä‘iá»‡n thoáº¡i Viá»‡t Nam).
+  - **28/28 tests passed** (Bao gá»“m 15 bÃ i test tiÃªu chuáº©n vÃ  13 láº§n cháº¡y tham sá»‘ hÃ³a `@ParameterizedTest` cho kiá»ƒm tra biá»ƒu thá»©c chÃ­nh quy sá»‘ Ä‘iá»‡n thoáº¡i Viá»‡t Nam, tÃ­ch há»£p xÃ¡c thá»±c parser PDFBox 3.0.4).
 - **Bá»™ kiá»ƒm thá»­ há»“i quy Backend liÃªn quan:**
   - `PrintDesignControllerTest.java`: **8/8 passed**
   - `NfcOrderControllerTest.java`: **8/8 passed**
@@ -54,16 +54,16 @@
 | `SRC-237-13` | RÃ ng buá»™c khÃ³a ngoáº¡i máº«u thiáº¿t káº¿ | PASS | Tá»« chá»‘i Ä‘áº·t hÃ ng vá»›i designId khÃ´ng tá»“n táº¡i (HTTP 400 `DESIGN_NOT_FOUND`) |
 | `SRC-237-14` | Ghi nháº­n Ä‘Æ¡n hÃ ng vÃ o nfc_orders | PASS | Tá»± sinh UUID, lÆ°u Ä‘Ãºng giÃ¡ trá»‹, tráº¡ng thÃ¡i khá»Ÿi táº¡o `PENDING` ("Má»›i tiáº¿p nháº­n") |
 | `SRC-237-15` | PhÃ¢n quyá»n truy cáº­p theo cÆ¡ sá»Ÿ (Tenant Isolation) | FAIL | `getOrders(null)` vÃ  `getDesigns(null)` tráº£ vá» toÃ n bá»™ dá»¯ liá»‡u cá»§a má»i cÆ¡ sá»Ÿ (`BUG-SCRUM237-02`) |
-| `SRC-237-16` | PhÃ¢n quyá»n truy cáº­p theo ID (IDOR) | FAIL | Thiáº¿u bÆ°á»›c kiá»ƒm tra tenant token cá»§a ngÆ°á»i gá»i khi láº¥y/xÃ³a báº£n ghi theo ID (`OBS-SCRUM237-02`) |
+| `SRC-237-16` | PhÃ¢n quyá»n truy cáº­p theo ID (IDOR) | FAIL | Thiáº¿u kiá»ƒm tra quyá»n sá»Ÿ há»¯u Ä‘á»‘i chiáº¿u JWT token khi xem/xuáº¥t/xÃ³a theo ID (`BUG-SCRUM237-03`) |
 
 ---
 
 ## 3. BÃO CÃO Lá»–I VÃ€ QUAN SÃT (BUGS & OBSERVATIONS)
 
-1. **BUG-SCRUM237-01 (Má»©c Ä‘á»™: Medium):** Sai lá»‡ch bá»™ lá»c giáº£i mÃ£ Ä‘á»‘i tÆ°á»£ng áº£nh trong file PDF. Code `PrintExportService.java` (L222) chá»‰ Ä‘á»‹nh `/Filter /DCTDecode` nhÆ°ng ghi dá»¯ liá»‡u byte PNG (chá»©a chá»¯ kÃ½ `â€°PNG`). TrÃ¬nh Ä‘á»c PDF chuáº©n má»±c cÃ³ thá»ƒ khÃ´ng má»Ÿ Ä‘Æ°á»£c hoáº·c bÃ¡o lá»—i file há»ng.
-2. **BUG-SCRUM237-02 (Má»©c Ä‘á»™: High):** Lá»— há»•ng rÃ² rá»‰ dá»¯ liá»‡u Ä‘a cÆ¡ sá»Ÿ (Multi-tenant Isolation Breach). Khi client khÃ´ng truyá»n `businessId` lÃªn API `GET /api/v1/nfc-orders` vÃ  `GET /api/v1/print-designs`, repository tráº£ vá» toÃ n bá»™ Ä‘Æ¡n hÃ ng vÃ  thiáº¿t káº¿ cá»§a má»i khÃ¡ch hÃ ng trong há»‡ thá»‘ng.
-3. **OBS-SCRUM237-01 (Má»©c Ä‘á»™: Low):** Tá»‡p PNG xuáº¥t ra cÃ³ kÃ­ch thÆ°á»›c pixel tÆ°Æ¡ng á»©ng 300 DPI nhÆ°ng chÆ°a cÃ³ chunk `pHYs` nhÃºng thÃ´ng tin máº­t Ä‘á»™ Ä‘iá»ƒm áº£nh, má»™t sá»‘ pháº§n má»m in áº¥n xem á»Ÿ cháº¿ Ä‘á»™ máº·c Ä‘á»‹nh cÃ³ thá»ƒ hiá»ƒn thá»‹ 72/96 DPI.
-4. **OBS-SCRUM237-02 (Má»©c Ä‘á»™: Medium):** Nguy cÆ¡ báº£o máº­t IDOR táº¡i cÃ¡c API truy váº¥n trá»±c tiáº¿p qua ID (`getOrderById`, `exportPrintDesign`, `deleteDesign`) do chÆ°a kiá»ƒm tra quyá»n sá»Ÿ há»¯u cÆ¡ sá»Ÿ Ä‘á»‘i chiáº¿u vá»›i JWT Claims.
+1. **BUG-SCRUM237-01 (Má»©c Ä‘á»™: Medium - CONFIRMED):** Sai lá»‡ch bá»™ lá»c giáº£i mÃ£ Ä‘á»‘i tÆ°á»£ng áº£nh trong file PDF. Code `PrintExportService.java` (L222) chá»‰ Ä‘á»‹nh `/Filter /DCTDecode` nhÆ°ng ghi dá»¯ liá»‡u byte PNG (chá»©a chá»¯ kÃ½ `â€°PNG`). ThÆ° viá»‡n Apache PDFBox 3.0.4 giáº£i mÃ£ tháº¥t báº¡i vá»›i `IIOException: Not a JPEG file: starts with 0xf1 0x11`.
+2. **BUG-SCRUM237-02 (Má»©c Ä‘á»™: High - CONFIRMED):** Lá»— há»•ng rÃ² rá»‰ dá»¯ liá»‡u Ä‘a cÆ¡ sá»Ÿ (Multi-tenant Isolation Breach). Khi client khÃ´ng truyá»n `businessId` lÃªn API `GET /api/v1/nfc-orders` vÃ  `GET /api/v1/print-designs`, repository tráº£ vá» toÃ n bá»™ Ä‘Æ¡n hÃ ng vÃ  thiáº¿t káº¿ cá»§a má»i khÃ¡ch hÃ ng trong há»‡ thá»‘ng.
+3. **BUG-SCRUM237-03 (Má»©c Ä‘á»™: High - CONFIRMED):** Lá»— há»•ng báº£o máº­t IDOR táº¡i cÃ¡c API truy váº¥n trá»±c tiáº¿p qua ID (`getOrderById`, `getDesignById`, `exportPrintDesign`, `deleteDesign`). Caller cÃ³ thá»ƒ truy cáº­p thÃ´ng tin cÃ¡ nhÃ¢n khÃ¡ch hÃ ng, xuáº¥t file in áº¥n vÃ  xÃ³a vÄ©nh viá»…n thiáº¿t káº¿ cá»§a tenant khÃ¡c mÃ  khÃ´ng bá»‹ kiá»ƒm tra quyá»n sá»Ÿ há»¯u.
+4. **OBS-SCRUM237-01 (Má»©c Ä‘á»™: Low - CONFIRMED):** Tá»‡p PNG xuáº¥t ra cÃ³ kÃ­ch thÆ°á»›c pixel tÆ°Æ¡ng á»©ng 300 DPI nhÆ°ng chÆ°a cÃ³ chunk `pHYs` nhÃºng thÃ´ng tin máº­t Ä‘á»™ Ä‘iá»ƒm áº£nh.
 
 ---
 

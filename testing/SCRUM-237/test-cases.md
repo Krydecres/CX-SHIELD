@@ -28,7 +28,7 @@
 | SRC-237-13 | Tá»« chá»‘i Ä‘áº·t hÃ ng khi máº«u thiáº¿t káº¿ designId khÃ´ng tá»“n táº¡i | Xá»­ lÃ½ lá»—i liÃªn káº¿t | PASS | NÃ©m ApiException HTTP 400 |
 | SRC-237-14 | LÆ°u Ä‘Æ¡n hÃ ng má»›i vÃ o nfc_orders tá»± sinh UUID vÃ  tráº¡ng thÃ¡i PENDING | LÆ°u trá»¯ & Khá»Ÿi táº¡o | PASS | ÄÃºng schema nfc_orders |
 | SRC-237-15 | PhÃ¢n quyá»n truy cáº­p theo cÆ¡ sá»Ÿ: CÃ¡ch ly khi cÃ³ businessId, há»Ÿ khi null | PhÃ¢n quyá»n Tenant | FAIL | RÃ² rá»‰ dá»¯ liá»‡u khi null, ghi nháº­n BUG-SCRUM237-02 |
-| SRC-237-16 | PhÃ¢n quyá»n truy cáº­p theo ID: Thiáº¿u kiá»ƒm tra quyá»n sá»Ÿ há»¯u (IDOR) | PhÃ¢n quyá»n Tenant | FAIL | Thiáº¿u verify caller token, ghi nháº­n OBS-SCRUM237-02 |
+| SRC-237-16 | PhÃ¢n quyá»n truy cáº­p theo ID: Thiáº¿u kiá»ƒm tra quyá»n sá»Ÿ há»¯u (IDOR) | PhÃ¢n quyá»n Tenant | FAIL | Lá»— há»•ng IDOR, ghi nháº­n BUG-SCRUM237-03 |
 
 ---
 
@@ -68,7 +68,7 @@
 - **Má»¥c tiÃªu:** Kiá»ƒm tra tÃ­nh toÃ n váº¹n vÃ  tÆ°Æ¡ng thÃ­ch chuáº©n cá»§a Ä‘á»‘i tÆ°á»£ng hÃ¬nh áº£nh XObject trong PDF.
 - **Dá»¯ liá»‡u Ä‘áº§u vÃ o:** Stream Ä‘á»‘i tÆ°á»£ng hÃ¬nh áº£nh sá»‘ 4 (`4 0 obj`) trong file PDF xuáº¥t ra.
 - **Káº¿t quáº£ mong Ä‘á»£i:** Náº¿u nhÃºng Ä‘á»‹nh dáº¡ng PNG thÃ¬ bá»™ lá»c pháº£i lÃ  `/FlateDecode` (hoáº·c chuyá»ƒn Ä‘á»•i áº£nh sang JPEG náº¿u dÃ¹ng `/DCTDecode`).
-- **Káº¿t quáº£ thá»±c táº¿:** FAIL (Code táº¡i `PrintExportService.java` dÃ²ng 222 khai bÃ¡o `/Filter /DCTDecode` nhÆ°ng ghi trá»±c tiáº¿p `pngBytes` chá»©a chá»¯ kÃ½ `â€°PNG`. Má»™t sá»‘ trÃ¬nh xem PDF nghiÃªm ngáº·t sáº½ bÃ¡o lá»—i file há»ng). Ghi nháº­n `BUG-SCRUM237-01`.
+- **Káº¿t quáº£ thá»±c táº¿:** FAIL (Code táº¡i `PrintExportService.java` dÃ²ng 222 khai bÃ¡o `/Filter /DCTDecode` nhÆ°ng ghi trá»±c tiáº¿p `pngBytes` chá»©a chá»¯ kÃ½ `â€°PNG`. ÄÆ°á»£c xÃ¡c nháº­n bá»Ÿi Apache PDFBox 3.0.4 nÃ©m `IIOException: Not a JPEG file: starts with 0xf1 0x11`). Ghi nháº­n `BUG-SCRUM237-01`.
 
 ### SRC-237-07: Xuáº¥t file vá»›i designId khÃ´ng tá»“n táº¡i nÃ©m lá»—i 404 DESIGN_NOT_FOUND
 - **Má»¥c tiÃªu:** Kiá»ƒm tra xá»­ lÃ½ ngoáº¡i lá»‡ khi yÃªu cáº§u xuáº¥t file vá»›i ID khÃ´ng cÃ³ trong cÆ¡ sá»Ÿ dá»¯ liá»‡u.
@@ -125,7 +125,7 @@
 - **Káº¿t quáº£ thá»±c táº¿:** FAIL (Code táº¡i `NfcOrderRepository.java` dÃ²ng 41 vÃ  `PrintDesignRepository.java` dÃ²ng 41 tráº£ vá» toÃ n bá»™ danh sÃ¡ch báº£n ghi náº¿u `businessId == null`). Ghi nháº­n `BUG-SCRUM237-02`.
 
 ### SRC-237-16: PhÃ¢n quyá»n truy cáº­p theo ID: Thiáº¿u kiá»ƒm tra quyá»n sá»Ÿ há»¯u (IDOR)
-- **Má»¥c tiÃªu:** Kiá»ƒm tra phÃ¢n quyá»n khi ngÆ°á»i dÃ¹ng gá»i API chi tiáº¿t theo ID (`/api/v1/nfc-orders/{id}`, `/api/v1/print-designs/{id}/export`).
-- **Dá»¯ liá»‡u Ä‘áº§u vÃ o:** NgÆ°á»i dÃ¹ng thuá»™c tenant B truy váº¥n báº£n ghi thuá»™c tenant A qua ID.
+- **Má»¥c tiÃªu:** Kiá»ƒm tra phÃ¢n quyá»n khi ngÆ°á»i dÃ¹ng gá»i API chi tiáº¿t theo ID (`/api/v1/nfc-orders/{id}`, `/api/v1/print-designs/{id}`, `/api/v1/print-designs/{id}/export`, `/api/v1/print-designs/{id}` DELETE).
+- **Dá»¯ liá»‡u Ä‘áº§u vÃ o:** NgÆ°á»i dÃ¹ng thuá»™c tenant B truy váº¥n/xuáº¥t/xÃ³a báº£n ghi thuá»™c tenant A qua ID.
 - **Káº¿t quáº£ mong Ä‘á»£i:** Há»‡ thá»‘ng pháº£i kiá»ƒm tra quyá»n sá»Ÿ há»¯u cÆ¡ sá»Ÿ vÃ  tá»« chá»‘i truy cáº­p (HTTP 403 Forbidden).
-- **Káº¿t quáº£ thá»±c táº¿:** FAIL (Code controller hiá»‡n táº¡i truy váº¥n tháº³ng tá»« repository báº±ng ID mÃ  khÃ´ng Ä‘á»‘i chiáº¿u vá»›i tenant ID cá»§a ngÆ°á»i gá»i). Ghi nháº­n `OBS-SCRUM237-02`.
+- **Káº¿t quáº£ thá»±c táº¿:** FAIL (XÃ¡c nháº­n báº±ng test `PrintNfcSourceTest.java`: ngÆ°á»i dÃ¹ng cÃ³ thá»ƒ Ä‘á»c Ä‘Æ¡n hÃ ng, xuáº¥t file in vÃ  xÃ³a vÄ©nh viá»…n thiáº¿t káº¿ cá»§a tenant khÃ¡c mÃ  khÃ´ng bá»‹ cháº·n). Ghi nháº­n `BUG-SCRUM237-03`.
