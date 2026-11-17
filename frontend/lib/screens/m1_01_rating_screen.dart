@@ -63,36 +63,33 @@ class _M101RatingScreenState extends State<M101RatingScreen> {
       _isSubmitting = true;
     });
 
-    // Gọi API ghi nhận kết quả và phân luồng cảm xúc
-    final result = await _apiService.submitRating(
-      sessionId: _surveyData.sessionId,
-      starRating: stars,
-    );
-
-    if (!mounted) return;
-
-    // Phân luồng điều hướng theo kết quả API (tương thích quy tắc E4.3):
-    // TargetScreen M1-02 -> Google Maps
-    // TargetScreen M1-04 -> Form góp ý nội bộ
-    final targetScreen = result.targetScreen;
-    if (targetScreen == 'M1-02' || (targetScreen.isEmpty && stars >= 4)) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => M102GoogleReviewScreen(
-            surveyData: _surveyData,
-            rateResult: result,
-          ),
-        ),
+    try {
+      // Gọi API ghi nhận kết quả và phân luồng cảm xúc
+      final result = await _apiService.submitRating(
+        sessionId: _surveyData.sessionId,
+        starRating: stars,
       );
-    } else {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => M104FeedbackScreen(
-            surveyData: _surveyData,
-            rateResult: result,
-          ),
-        ),
-      );
+
+      if (!mounted) return;
+
+      // Phân luồng điều hướng theo kết quả API (tương thích quy tắc E4.3):
+      // TargetScreen M1-02 -> Google Maps
+      // TargetScreen M1-04 -> Form góp ý nội bộ
+      final targetScreen = result.targetScreen;
+      final Widget nextScreen = targetScreen == 'M1-02' || (targetScreen.isEmpty && stars >= 4)
+          ? M102GoogleReviewScreen(surveyData: _surveyData, rateResult: result)
+          : M104FeedbackScreen(surveyData: _surveyData, rateResult: result);
+
+      // Chờ khách quay lại M1-01 (nút "← Trở lại khảo sát" hoặc Back) rồi mới mở khóa,
+      // tránh treo vòng xoay "Đang chuyển tiếp..." khi chọn sao lần nữa (SCRUM-255).
+      await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => nextScreen));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+          _selectedStar = null;
+        });
+      }
     }
   }
 
