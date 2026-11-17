@@ -24,30 +24,34 @@
 > **LƯU Ý VỀ PHÂN QUYỀN VÀ POSTGRESQL RLS:**
 > Kiểm thử phân quyền chi nhánh và cơ sở (`TC-234-11`, `TC-234-12`) được thực hiện bằng cô lập dữ liệu theo `businessId`/`branchId` và mock `SupabaseAdminClient`. Cơ chế **Live Supabase PostgreSQL RLS thật trên production database chưa được kiểm chứng trực tiếp** (Live RLS: **NOT RUN**).
 
-| Mã TC | Tên kịch bản kiểm thử | Trọng tâm | Test Method trong code | Kết quả TC | Kết quả Auto |
-| :--- | :--- | :---: | :--- | :---: | :---: |
-| `TC-234-01` | Tạo mã QR cho chi nhánh với các loại vị trí tự sinh đúng tiền tố mã | 1 | `testCreateQrCodeWithVariousTypesGeneratesCorrectPrefix()` | **PASS** | **PASS** |
-| `TC-234-02` | Đảm bảo mã QR tạo ra có targetUrl đúng chuẩn khảo sát và status mặc định ACTIVE | 1 | `testCreateQrCodeDefaultValuesAndTargetUrlFormat()` | **PASS** | **PASS** |
-| `TC-234-03` | ensureDefaultQrCode không tạo mã trùng nếu chi nhánh đã có ít nhất một mã QR | 2 | `testEnsureDefaultQrCodeWhenBranchAlreadyHasQr()` | **PASS** | **PASS** |
-| `TC-234-04` | Lưu và tra cứu mã QR theo code tùy chỉnh (Ghi nhận tính duy nhất của mã) | 2 | `testCreateQrCodeCustomCodeIndexAndUniquenessObservation()` | **PASS** | **PASS** |
-| `TC-234-05` | Lưu và đọc dữ liệu print_designs đầy đủ thuộc tính mẫu, màu sắc, khổ in | 3 | `testSaveAndLoadPrintDesignFullLifecycle()` | **PASS** | **PASS** |
-| `TC-234-06` | Xóa mẫu thiết kế ấn phẩm thành công và trả về 404 khi truy vấn lại hoặc xóa tiếp | 3 | `testDeletePrintDesignLifecycle()` | **PASS** | **PASS** |
-| `TC-234-07` | Lưu mẫu thiết kế với logoUrl hợp lệ dạng HTTPS URL được lưu trữ đầy đủ | 4 | `testSavePrintDesignWithValidLogoUrl()` | **PASS** | **PASS** |
-| `TC-234-08` | Kiểm tra giới hạn kiểm soát logo: Backend thiếu tầng validate định dạng file và kích thước | 4 | `testLogoValidationBackendLacksFormatAndSizeEnforcementObservation()` | **PASS** | **PASS** |
-| `TC-234-09` | Tự động trim khoảng trắng và gán nội dung CTA mặc định chuẩn khi để trống | 5 | `testCtaTextTrimWhitespaceAndDefaultFallback()` | **PASS** | **PASS** |
-| `TC-234-10` | Nội dung CTA hỗ trợ ký tự tiếng Việt có dấu và ký tự đặc biệt, xuất ấn phẩm thành công | 5 | `testCtaTextSupportsVietnameseUnicodeAndExport()` | **PASS** | **PASS** |
-| `TC-234-11` | Cô lập dữ liệu thiết kế print_designs theo cơ sở (businessId) ngăn ngừa rò rỉ dữ liệu | 6 | `testTenantIsolationPrintDesignsByBusinessId()` | **PASS** | **PASS** |
-| `TC-234-12` | Cô lập dữ liệu mã QR theo chi nhánh qua mock Supabase PostgREST client | 6 | `testBranchIsolationQrCodesFilteredByBranchIdMockSupabase()` | **PASS** | **PASS** |
-| `TC-234-13` | Từ chối lưu thiết kế ấn phẩm khi qrCodeId không tồn tại trả về 400 QR_NOT_FOUND | 7 | `testCreateDesignWithNonExistentQrCodeThrows400()` | **PASS** | **PASS** |
-| `TC-234-14` | Xử lý lỗi đầu vào: Từ chối branchId null hoặc brandName rỗng với IllegalArgumentException | 7 | `testInputValidationThrowsIllegalArgumentException()` | **PASS** | **PASS** |
+| Mã TC | Tên kịch bản kiểm thử | Trọng tâm | Test Method trong code | Kết quả TC | Kết quả Auto | Ghi chú đánh giá |
+| :--- | :--- | :---: | :--- | :---: | :---: | :--- |
+| `TC-234-01` | Tạo mã QR cho chi nhánh với các loại vị trí tự sinh đúng tiền tố mã | 1 | `testCreateQrCodeWithVariousTypesGeneratesCorrectPrefix()` | **PASS** | **PASS** | Tiền tố MC-BAN, MC-QUAY, MC-KHU, MC-NV chuẩn xác |
+| `TC-234-02` | Đảm bảo mã QR tạo ra có targetUrl đúng chuẩn khảo sát và status mặc định ACTIVE | 1 | `testCreateQrCodeDefaultValuesAndTargetUrlFormat()` | **PASS** | **PASS** | targetUrl đúng format, status ACTIVE |
+| `TC-234-03` | ensureDefaultQrCode không tạo mã trùng nếu chi nhánh đã có ít nhất một mã QR | 2 | `testEnsureDefaultQrCodeWhenBranchAlreadyHasQr()` | **PASS** | **PASS** | Idempotent, không sinh thêm QR khi chi nhánh đã có mã |
+| `TC-234-04` | Lưu và tra cứu mã QR theo code tùy chỉnh (Ghi nhận tính duy nhất của mã) | 2 | `testCreateQrCodeCustomCodeIndexAndUniquenessObservation()` | **PASS** | **PASS** | Tra cứu code thành công; ghi nhận Observation OBS-SCRUM234-01 |
+| `TC-234-05` | Lưu và đọc dữ liệu print_designs đầy đủ thuộc tính mẫu, màu sắc, khổ in | 3 | `testSaveAndLoadPrintDesignFullLifecycle()` | **PASS** | **PASS** | CRUD print_designs chuẩn xác 100% dữ liệu |
+| `TC-234-06` | Xóa mẫu thiết kế ấn phẩm thành công và trả về 404 khi truy vấn lại hoặc xóa tiếp | 3 | `testDeletePrintDesignLifecycle()` | **PASS** | **PASS** | Xóa bản ghi thành công, 404 DESIGN_NOT_FOUND khi xóa lần 2 |
+| `TC-234-07` | Lưu mẫu thiết kế với logoUrl hợp lệ dạng HTTPS URL được lưu trữ đầy đủ | 4 | `testSavePrintDesignWithValidLogoUrl()` | **PASS** | **PASS** | URL HTTPS hợp lệ được lưu và trả về chính xác trong DTO |
+| `TC-234-08` | Kiểm tra giới hạn kiểm soát logo: Backend thiếu tầng validate định dạng file và kích thước | 4 | `testLogoValidationBackendLacksFormatAndSizeEnforcementObservation()` | **FAIL (Bug)** | **PASS (Proof)** | Hệ thống không validate định dạng (.png/.jpg/.svg) và size logo (BUG-SCRUM234-01) |
+| `TC-234-09` | Tự động trim khoảng trắng và gán nội dung CTA mặc định chuẩn khi để trống | 5 | `testCtaTextTrimWhitespaceAndDefaultFallback()` | **PASS** | **PASS** | Tự động trim whitespace và fallback text mặc định chuẩn |
+| `TC-234-10` | Nội dung CTA hỗ trợ ký tự tiếng Việt có dấu và ký tự đặc biệt, xuất ấn phẩm thành công | 5 | `testCtaTextSupportsVietnameseUnicodeAndExport()` | **PASS** | **PASS** | Hỗ trợ tiếng Việt đầy đủ, xuất file PDF 300 DPI không lỗi font |
+| `TC-234-11` | Cô lập dữ liệu thiết kế print_designs theo cơ sở (businessId) ngăn ngừa rò rỉ dữ liệu | 6 | `testTenantIsolationPrintDesignsByBusinessId()` | **PASS** | **PASS** | Tenant isolation theo businessId không rò rỉ dữ liệu |
+| `TC-234-12` | Cô lập dữ liệu mã QR theo chi nhánh qua mock Supabase PostgREST client | 6 | `testBranchIsolationQrCodesFilteredByBranchIdMockSupabase()` | **PASS** | **PASS** | Gọi mock Supabase với branch_id filter chuẩn (Live RLS: NOT RUN) |
+| `TC-234-13` | Từ chối lưu thiết kế ấn phẩm khi qrCodeId không tồn tại trả về 400 QR_NOT_FOUND | 7 | `testCreateDesignWithNonExistentQrCodeThrows400()` | **PASS** | **PASS** | 400 Bad Request, code QR_NOT_FOUND khi qrCodeId ảo |
+| `TC-234-14` | Xử lý lỗi đầu vào: Từ chối branchId null hoặc brandName rỗng với IllegalArgumentException | 7 | `testInputValidationThrowsIllegalArgumentException()` | **PASS** | **PASS** | Bắt buộc tham số branchId, qrCodeId, brandName hợp lệ |
 
 - **Tổng số Test Cases thiết kế:** **14**
-- **Test Case PASS:** **14 / 14** (100%)
-- **Test Case FAIL / BLOCKED:** **0**
-- **Automation Tests mới (SCRUM-234):** **14 / 14 PASS**
+- **Test Case PASS:** **13 / 14** (92.9%)
+- **Test Case FAIL:** **1 / 14** (7.1%) (`TC-234-08` – Vi phạm yêu cầu kiểm tra định dạng và dung lượng logo)
+- **Test Case BLOCKED:** **0**
+- **Test Case NOT RUN:** **0**
+- **Automation Tests mới (SCRUM-234):** **14 / 14 PASS** (Trong đó test 8 PASS với vai trò kiểm chứng và tái hiện lỗi hệ thống)
 - **Regression Tests (Backend):** **24 / 24 PASS** (`QrCodeControllerTest`: 8, `PrintDesignControllerTest`: 8, `NfcOrderControllerTest`: 8)
 - **Tổng số Automation Tests thực thi:** **38 / 38 PASS** (100%)
-- **Số bug / observation ghi nhận:** **2** (`BUG-SCRUM234-01`, `BUG-SCRUM234-02`)
+- **Phân loại vấn đề ghi nhận:**
+  - **1 BUG (Defect):** `BUG-SCRUM234-01` (Thiếu kiểm tra định dạng tập tin và kích thước logo, vi phạm yêu cầu số 4)
+  - **1 OBSERVATION:** `OBS-SCRUM234-01` (Chưa kiểm tra trùng mã QR khi tạo mã tùy chỉnh, rủi ro toàn vẹn dữ liệu)
 
 ---
 
@@ -77,9 +81,9 @@
 
 ### TC-234-04: Lưu và tra cứu mã QR theo code tùy chỉnh (Ghi nhận tính duy nhất của mã)
 - **Mục tiêu:** Kiểm tra lưu mã QR theo code chỉ định và tra cứu qua `findByCode`. Ghi nhận hiện trạng backend khi tạo trùng code.
-- **Dữ liệu đầu vào:**`code = "MC-VIP-SPECIAL"`. Sau đó tạo thêm 1 mã cùng code.
-- **Kết quả mong đợi:** Tra cứu `findByCode` tìm thấy đúng bản ghi. Quan sát: Repository ghi đè chỉ mục `codeIndex` mà chưa ném lỗi 409 Conflict.
-- **Kết quả thực tế:** **PASS** (Xác thực thành công tra cứu và ghi nhận quan sát kiến trúc).
+- **Dữ liệu đầu vào:**`code = "MC-VIP-SPECIAL"`. Sau đó tạo thêm 1 mã cùng code trong cùng chi nhánh.
+- **Kết quả mong đợi:** Tra cứu `findByCode` tìm thấy đúng bản ghi. Ghi nhận quan sát: Repository ghi đè chỉ mục `codeIndex` mà chưa ném lỗi 409 Conflict.
+- **Kết quả thực tế:** **PASS (Chức năng tạo và tra cứu đạt; ghi nhận Observation OBS-SCRUM234-01)**.
 
 ### TC-234-05: Lưu và đọc dữ liệu print_designs đầy đủ thuộc tính mẫu, màu sắc, khổ in
 - **Mục tiêu:** Kiểm tra chu trình tạo và đọc lại mẫu thiết kế ấn phẩm vào `print_designs` với đầy đủ các trường dữ liệu: template, brandName, ctaText, color, logoUrl, exportFormat, size.
@@ -100,10 +104,10 @@
 - **Kết quả thực tế:** **PASS**.
 
 ### TC-234-08: Kiểm tra giới hạn kiểm soát logo: Backend thiếu tầng validate định dạng file và kích thước
-- **Mục tiêu:** Kiểm chứng hiện trạng mã nguồn: backend có kiểm tra định dạng file ảnh (.png, .jpg, .svg) hay giới hạn kích thước logo không.
+- **Mục tiêu:** Kiểm chứng hiện trạng mã nguồn: backend có kiểm tra định dạng file ảnh (.png, .jpg, .svg) hay giới hạn kích thước logo theo yêu cầu số 4 không.
 - **Dữ liệu đầu vào:**`logoUrl = "https://malicious.example.com/payload.exe"`.
-- **Kết quả mong đợi:** Backend hiện tại không validate định dạng/kích thước nên vẫn chấp nhận lưu chuỗi. Ghi nhận lỗi/observation `BUG-SCRUM234-01`.
-- **Kết quả thực tế:** **PASS** (Tái hiện chính xác hiện trạng thiếu sót của backend).
+- **Kết quả mong đợi:** Backend phải từ chối URL không phải hình ảnh hoặc file thực thi nguy hiểm.
+- **Kết quả thực tế:** **FAIL (Bug)** (Hệ thống chấp nhận lưu chuỗi `payload.exe` mà không có validation, vi phạm yêu cầu kiểm tra định dạng/kích thước logo; Automation test PASS vì đã kiểm chứng và tái hiện lỗi BUG-SCRUM234-01).
 
 ### TC-234-09: Tự động trim khoảng trắng và gán nội dung CTA mặc định chuẩn khi để trống
 - **Mục tiêu:** Kiểm tra logic xử lý nội dung câu kêu gọi hành động (CTA): tự động trim khoảng trắng thừa và fallback về câu CTA chuẩn nếu để trống.

@@ -17,14 +17,14 @@
 | Chỉ số đo lường (Metric) | Giá trị thực tế | Tỷ lệ (%) | Ghi chú đánh giá |
 | :--- | :---: | :---: | :--- |
 | **Tổng số Test Cases thiết kế (Designed TCs)** | **14** | **100%** | Đồng bộ chính xác 1:1 với 14 test methods trong `QrStudioSourceTest.java` |
-| - Số Test Cases ĐẠT (PASS) | **14** | **100%** | Bao gồm kiểm thử chức năng, validation, phân quyền cơ sở và kiểm chứng hiện trạng |
-| - Số Test Cases KHÔNG ĐẠT (FAIL) | **0** | **0%** | 0 ca kiểm thử thất bại |
+| - Số Test Cases ĐẠT (PASS) | **13** | **92.9%** | Đạt yêu cầu về tạo QR, chống trùng QR mặc định, CRUD print_designs, CTA, phân quyền và validation |
+| - Số Test Cases KHÔNG ĐẠT (FAIL) | **1** | **7.1%** | `TC-234-08`: Hệ thống thiếu kiểm tra định dạng và dung lượng logo (BUG-SCRUM234-01) |
 | - Số Test Cases BỊ CHẶN (BLOCKED) | **0** | **0%** | Không có bài test nào bị chặn môi trường |
 | - Số Test Cases CHƯA CHẠY (NOT RUN) | **0** | **0%** | 100% test cases đều được thực thi tự động |
-| **Số Automation Tests mới (SCRUM-234)** | **14 / 14** | **100% PASS** | 14 tests mới trong `QrStudioSourceTest.java` |
+| **Số Automation Tests mới (SCRUM-234)** | **14 / 14** | **100% PASS** | 14 tests mới trong `QrStudioSourceTest.java` (test 8 PASS vì tái hiện thành công lỗi) |
 | **Số Automation Tests hồi quy (Regression)** | **30 / 30** | **100% PASS** | 24 tests Backend (`QrCodeControllerTest`: 8, `PrintDesignControllerTest`: 8, `NfcOrderControllerTest`: 8) + 6 tests Frontend (`d3_09_qr_studio_test.dart`) |
 | **Tổng số Automation Tests thực thi** | **44 / 44** | **100% PASS** | Toàn bộ 44 tests (38 backend + 6 frontend) đều thành công 100% |
-| **Lỗi & Kiến trúc ghi nhận (Defects / Observations)** | **2** | **Low / Med** | `BUG-SCRUM234-01` (Thiếu kiểm tra định dạng/dung lượng logo) & `BUG-SCRUM234-02` (Thiếu kiểm tra trùng mã code) |
+| **Lỗi & Kiến trúc ghi nhận (Defects & Observations)** | **2** | **1 Bug + 1 Obs** | `BUG-SCRUM234-01` (Confirmed Bug - Medium) & `OBS-SCRUM234-01` (Observation - Low) |
 | **Sửa đổi Production Code** | **KHÔNG** | **0 lines** | Tuyệt đối tuân thủ nguyên tắc không can thiệp sửa production code |
 
 ---
@@ -36,11 +36,11 @@
 | `TC-234-01` | `testCreateQrCodeWithVariousTypesGeneratesCorrectPrefix()` | Tạo mã QR tự sinh đúng tiền tố (MC-BAN, MC-QUAY, MC-KHU, MC-NV) | **PASS** | **PASS** | 1. Tạo mã QR cho chi nhánh |
 | `TC-234-02` | `testCreateQrCodeDefaultValuesAndTargetUrlFormat()` | Đảm bảo targetUrl đúng format và status mặc định ACTIVE | **PASS** | **PASS** | 1. Tạo mã QR cho chi nhánh |
 | `TC-234-03` | `testEnsureDefaultQrCodeWhenBranchAlreadyHasQr()` | ensureDefaultQrCode không tạo mã trùng nếu chi nhánh đã có QR | **PASS** | **PASS** | 2. Chống tạo trùng QR |
-| `TC-234-04` | `testCreateQrCodeCustomCodeIndexAndUniquenessObservation()` | Lưu và tra cứu mã QR theo code (Ghi nhận tính duy nhất) | **PASS** | **PASS** | 2. Chống tạo trùng QR |
+| `TC-234-04` | `testCreateQrCodeCustomCodeIndexAndUniquenessObservation()` | Lưu và tra cứu mã QR theo code (Ghi nhận Observation trùng mã) | **PASS** | **PASS** | 2. Chống tạo trùng QR |
 | `TC-234-05` | `testSaveAndLoadPrintDesignFullLifecycle()` | Lưu và đọc dữ liệu print_designs đầy đủ thuộc tính mẫu, khổ in | **PASS** | **PASS** | 3. CRUD print_designs |
 | `TC-234-06` | `testDeletePrintDesignLifecycle()` | Xóa mẫu thiết kế và trả về 404 khi truy vấn lại hoặc xóa tiếp | **PASS** | **PASS** | 3. CRUD print_designs |
 | `TC-234-07` | `testSavePrintDesignWithValidLogoUrl()` | Lưu mẫu thiết kế với logoUrl hợp lệ dạng HTTPS URL | **PASS** | **PASS** | 4. Kiểm tra Logo |
-| `TC-234-08` | `testLogoValidationBackendLacksFormatAndSizeEnforcementObservation()` | Kiểm tra giới hạn: Backend thiếu validate định dạng/dung lượng logo | **PASS** | **PASS** | 4. Kiểm tra Logo |
+| `TC-234-08` | `testLogoValidationBackendLacksFormatAndSizeEnforcementObservation()` | Kiểm tra giới hạn: Backend thiếu validate định dạng/dung lượng logo | **FAIL** | **PASS** | 4. Kiểm tra Logo (BUG-SCRUM234-01) |
 | `TC-234-09` | `testCtaTextTrimWhitespaceAndDefaultFallback()` | Tự động trim khoảng trắng và gán nội dung CTA mặc định chuẩn | **PASS** | **PASS** | 5. Kiểm tra nội dung CTA |
 | `TC-234-10` | `testCtaTextSupportsVietnameseUnicodeAndExport()` | Nội dung CTA hỗ trợ ký tự tiếng Việt và xuất file in ấn thành công | **PASS** | **PASS** | 5. Kiểm tra nội dung CTA |
 | `TC-234-11` | `testTenantIsolationPrintDesignsByBusinessId()` | Cô lập dữ liệu thiết kế print_designs theo cơ sở (businessId) | **PASS** | **PASS** | 6. Phân quyền cơ sở / chi nhánh |
