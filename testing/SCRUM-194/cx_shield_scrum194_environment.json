@@ -1,0 +1,141 @@
+{
+  "id": "e41d305e-scrum194-env-0001",
+  "name": "CX-SHIELD SCRUM-194 Environment",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8089",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "accessToken",
+      "value": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.mock-jwt-owner-token",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "staffAccessToken",
+      "value": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.mock-jwt-staff-token",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "invalidToken",
+      "value": "invalid-or-expired-token-string",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "branchId",
+      "value": "22222222-2222-2222-2222-222222222222",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "unconfiguredBranchId",
+      "value": "33333333-3333-3333-3333-333333333333",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "inaccessibleBranchId",
+      "value": "44444444-4444-4444-4444-444444444444",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "nonExistentBranchId",
+      "value": "99999999-9999-9999-9999-999999999999",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "malformedBranchId",
+      "value": "invalid-branch-uuid-xyz",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "validPlaceId",
+      "value": "ChIJN1t_tDeuEmsRUsoyG83frY4",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "validPlaceIdMin",
+      "value": "ChIJ1234567890abcdef",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "validPlaceIdMax",
+      "value": "ChIJ_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "tooLongPlaceId",
+      "value": "ChIJ_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "notFoundPlaceId",
+      "value": "ChIJ00000000000000000000000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "unavailablePlaceId",
+      "value": "ChIJ_UNAVAILABLE_MOCK_TEST_500",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "disabledKeyPlaceId",
+      "value": "ChIJ_DISABLED_KEY_MOCK_TEST",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "invalidFormatPlaceId",
+      "value": "ChIJ!@#Invalid_Format$",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "tooShortPlaceId",
+      "value": "ChIJ123",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "validReviewUrl",
+      "value": "https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "validCustomReviewUrl",
+      "value": "https://g.page/r/Cb_example/review",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "invalidHttpReviewUrl",
+      "value": "http://g.page/r/Cb_example/review",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "invalidDomainReviewUrl",
+      "value": "https://evil-google.com/review",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2026-11-16T19:50:00.000Z",
+  "_postman_exported_using": "Postman/11.0.0"
+}
