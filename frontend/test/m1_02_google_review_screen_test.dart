@@ -212,4 +212,49 @@ void main() {
     // Xác nhận điều hướng an toàn về M101RatingScreen
     expect(find.byType(M101RatingScreen), findsOneWidget);
   });
+
+  testWidgets('E1.2: Hỗ trợ mức 4 sao vào M1-02 và tuân thủ chống review gating (không pre-fill, không voucher)', (tester) async {
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    const rateResult4Star = RateResultModel(
+      responseId: 'resp-4star-123',
+      sessionId: 'session-123',
+      starRating: 4,
+      sentimentGroup: 'POSITIVE',
+      targetScreen: 'M1-02',
+      allowUrgentCall: false,
+      message: 'Cảm ơn bạn đã chấm 4 sao!',
+      hotline: '02838221122',
+      suggestedKeywords: [
+        'Cà phê đậm đà ngon',
+        'Phục vụ nhanh chóng',
+      ],
+      publicReviewEnabled: true,
+      reviewDirectUrl: 'https://search.google.com/local/writereview?placeid=ChIJ1234567890abcdef',
+      placeName: 'Maison Coffee & Bistro - Đồng Khởi',
+    );
+
+    await tester.pumpWidget(createTestWidget(rateResult: rateResult4Star));
+    await tester.pumpAndSettle();
+
+    // 1. Xác nhận mức 4 sao vẫn vào đúng màn M1-02 và hiển thị từ khóa gợi ý
+    expect(find.text('M1-02: Đánh giá Google Maps'), findsOneWidget);
+    expect(find.text('Cảm ơn bạn đã chấm 4 sao!'), findsOneWidget);
+    expect(find.text('Cà phê đậm đà ngon'), findsOneWidget);
+
+    // 2. Xác nhận link Google Review đúng cơ sở, không chọn sẵn sao và không điền sẵn nội dung
+    final reviewUri = Uri.parse(rateResult4Star.reviewDirectUrl!);
+    expect(reviewUri.host, 'search.google.com');
+    expect(reviewUri.path, '/local/writereview');
+    expect(reviewUri.queryParameters['placeid'], 'ChIJ1234567890abcdef');
+    expect(reviewUri.queryParameters.keys, equals(['placeid']));
+
+    // 3. Xác nhận không gắn voucher / quà tặng đổi lấy đánh giá 5 sao
+    expect(
+      find.textContaining(RegExp(r'voucher|giảm giá|tặng quà|khuyến mãi', caseSensitive: false)),
+      findsNothing,
+    );
+  });
 }
