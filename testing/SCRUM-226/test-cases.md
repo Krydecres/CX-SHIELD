@@ -1,16 +1,16 @@
-# TEST CASES: SCRUM-225 – Kiểm thử mã nguồn từ khóa gợi ý và ngưỡng chia luồng
+# Test Cases — SCRUM-226: Kiểm thử chức năng cài đặt từ khóa SEO & ngưỡng chia luồng (D3-07 / E4.3)
 
-- **Người thực hiện:** Long Quốc Cường (Cường 032)
-- **Mã Task Jira:** SCRUM-225 (Story cha: SCRUM-133 – E4.3)
-- **Task code phụ thuộc:** `SCRUM-212`
-- **Trạng thái thực thi:** **PASS** (5/5 Test Cases đạt yêu cầu)
+- **Mã Task:** SCRUM-226
+- **Tính năng:** E4.3 — Quản lý bộ từ khóa gợi ý đánh giá & cấu hình ngưỡng phân luồng cảm xúc
+- **Màn hình / Route:** `D3-07` (`/funnel/keywords`) & Live Preview / Luồng khách (`M1-02`, `M1-04`)
+- **Phân loại kiểm thử:** Black-box Functional & UI Testing
+- **Vai trò thực hiện:** Chủ cơ sở (`OWNER`)
 
-## Danh sách Kịch bản Kiểm thử Mã nguồn (White-box & Security)
-
-| Mã TC | Tên kịch bản | Đối tượng / Điều kiện kiểm tra | Kết quả mong đợi | Trạng thái |
-| :---: | :--- | :--- | :--- | :---: |
-| **TC-225-01** | Kiểm tra logic CRUD từ khóa gợi ý theo ngành (`review_keywords`) | Controller / Service / Repository quản lý `review_keywords` theo ngành hàng (Nha khoa, Spa, F&B…) | Hỗ trợ đầy đủ thêm / sửa / xóa từ khóa theo cơ sở và ngành hàng | **PASS** |
-| **TC-225-02** | Kiểm tra hợp lệ ngưỡng chia luồng (`routing_rules`) & giá trị mặc định | Cấu hình ngưỡng chia luồng trong `routing_rules` và nhánh mặc định | Mặc định `4–5 sao → Google` và `1–3 sao → góp ý nội bộ`; từ chối ngưỡng ngoài khoảng `1..5` | **PASS** |
-| **TC-225-03** | Kiểm tra áp dụng ngưỡng chia luồng động trong luồng khảo sát | Hàm `SurveyServiceImpl.submitRating()` đọc ngưỡng từ `routing_rules` | Điều hướng `M1-02` / `M1-04` theo ngưỡng động đã cấu hình cho từng chi nhánh | **PASS** |
-| **TC-225-04** | Kiểm tra phân quyền truy cập theo cơ sở trên `review_keywords` & `routing_rules` | Chính sách RLS Supabase và kiểm tra quyền tầng Service giữa các cơ sở khác nhau | Tài khoản thuộc cơ sở A không đọc/sửa được cấu hình của cơ sở B (`403 Forbidden` / RLS chặn) | **PASS** |
-| **TC-225-05** | Kiểm tra xử lý lỗi khi thiếu từ khóa / chưa cấu hình quy tắc & hồi quy Backend | Gọi API khi `review_keywords` rỗng và chạy bộ kiểm thử Backend (`SurveyControllerTest`) | Trả về danh sách rỗng hoặc gợi ý mặc định an toàn; 100% test hồi quy Backend chạy xanh | **PASS** |
+| ID | Tên kịch bản | Điều kiện tiên quyết | Các bước thực hiện | Kết quả mong đợi | Trạng thái |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **TC-226-01** | Kiểm tra hiển thị giao diện mặc định màn hình `D3-07` | Đăng nhập với tài khoản `OWNER`, truy cập `/funnel/keywords`. | 1. Mở trang **Cài đặt phễu: Từ khóa SEO & Ngưỡng phân luồng**.<br>2. Quan sát 3 khu vực: Ngưỡng phân luồng, Bộ từ khóa theo ngành và Khung xem trước (`M1-02`). | - Hiển thị 3 mức ngưỡng: `4 – 5 sao (Khuyên dùng)` (đang chọn mặc định), `Chỉ 5 sao (Khắt khe)`, `3 – 5 sao (Mở rộng)`.<br>- Công tắc **Chống lọc đánh giá (Review Gating)** đang bật.<br>- Hiển thị danh sách từ khóa mặc định của ngành `F&B` (`Đang bật: 3 / 3`). | **PASS** |
+| **TC-226-02** | Thêm mới, bật/tắt, xóa từ khóa và kiểm tra chặn nhập trùng | Đang ở mục **2. Bộ từ khóa gợi ý SEO theo ngành** trên `D3-07`. | 1. Nhập `Không gian check-in đẹp` vào ô nhập từ khóa → bấm **+ Thêm từ khóa**.<br>2. Nhập lại y nguyên `Không gian check-in đẹp` → bấm **+ Thêm từ khóa**.<br>3. Bấm vào chip từ khóa để tắt/bật trạng thái hiển thị.<br>4. Bấm dấu `×` trên chip vừa tạo để xóa. | - Bước 1: Từ khóa mới xuất hiện trong danh sách, bộ đếm tăng lên `4 / 4`.<br>- Bước 2: Hệ thống chặn lưu trùng và hiển thị thông báo cảnh báo từ khóa đã tồn tại.<br>- Bước 3 & 4: Trạng thái bật/tắt cập nhật tức thì; từ khóa bị xóa biến mất khỏi danh sách. | **PASS** |
+| **TC-226-03** | Áp dụng bộ từ khóa mẫu theo ngành nghề | Đang ở mục **2. Bộ từ khóa gợi ý SEO theo ngành** trên `D3-07`. | 1. Mở dropdown **Ngành nghề**, chọn ngành khác (ví dụ: `Spa & Thẩm mỹ`).<br>2. Bấm nút **Áp dụng mẫu ngành này**. | - Hệ thống nạp toàn bộ các từ khóa gợi ý mẫu đặc trưng của ngành vừa chọn.<br>- Không tạo bản sao trùng lặp nếu từ khóa đã có sẵn. | **PASS** |
+| **TC-226-04** | Thay đổi ngưỡng phân luồng cảm xúc sang `Chỉ 5 sao (Khắt khe)` | Đang ở mục **1. Ngưỡng điểm phân luồng cảm xúc (Routing Rules)**. | 1. Bấm chọn thẻ **Chỉ 5 sao (Khắt khe)** (`Chỉ 5 sao tuyệt đối → Google Maps`, `1–4 sao → Form góp ý nội bộ`).<br>2. Quan sát thông báo và mô tả công tắc Review Gating bên dưới. | - Thẻ `Chỉ 5 sao (Khắt khe)` được chọn và lưu tự động.<br>- Hiển thị thông báo cập nhật thành công; mô tả Review Gating cập nhật thành `cho khách 1–4 sao`. | **PASS** |
+| **TC-226-05** | Kiểm tra đồng bộ từ khóa đang bật và ngưỡng mới sang giao diện khách hàng | Đã cấu hình từ khóa và ngưỡng ở `D3-07`. | 1. Cuộn xuống khung **Xem trước giao diện khách hàng (`M1-02`)**, bấm chọn các chip từ khóa đang bật.<br>2. Đối chiếu luồng điều hướng của đánh giá 4 sao và 5 sao theo ngưỡng `Chỉ 5 sao`. | - Chỉ các từ khóa đang bật mới hiển thị trên `M1-02` và tự ghép vào câu đánh giá mẫu khi chạm chọn.<br>- Đánh giá 4 sao điều hướng sang Form góp ý nội bộ (`M1-04`), đánh giá 5 sao sang `M1-02`. | **PASS** |
+| **TC-226-06** | Khôi phục ngưỡng phân luồng mặc định `4 – 5 sao (Khuyên dùng)` | Đang chọn ngưỡng `Chỉ 5 sao (Khắt khe)` trên `D3-07`. | 1. Bấm chọn lại thẻ **4 – 5 sao (Khuyên dùng)**.<br>2. Xác nhận trạng thái lưu trên giao diện. | - Hệ thống lưu lại quy tắc mặc định: `4–5 sao → Google Maps`, `1–3 sao → Form góp ý nội bộ`.<br>- Mô tả Review Gating trở về `cho khách 1–3 sao`. | **PASS** |

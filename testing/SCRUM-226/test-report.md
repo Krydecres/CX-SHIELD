@@ -1,25 +1,29 @@
-# BÁO CÁO KẾT QUẢ KIỂM THỬ MÃ NGUỒN – SCRUM-225
+# Báo Cáo Kết Quả Kiểm Thử (Test Report) — SCRUM-226
 
-- **Nhiệm vụ:** [E4.3] Kiểm thử mã nguồn từ khóa gợi ý và ngưỡng chia luồng
-- **Tester:** Long Quốc Cường (Cường 032)
+## 1. Thông tin chung
+- **Dự án:** CX-SHIELD — Nền tảng điều hướng đánh giá & quản trị trải nghiệm khách hàng
+- **Mã Task:** SCRUM-226 (Epic E4.3 — Cài đặt từ khóa SEO & Ngưỡng phân luồng cảm xúc)
+- **Màn hình kiểm thử:** `D3-07` (`/funnel/keywords`) và đồng bộ `M1-02` / `M1-04`
+- **Môi trường kiểm thử:** Flutter Web (`localhost:8000` / Cloud Workstations), Chrome Desktop
 - **Ngày thực hiện:** 17/11/2026
-- **Task code phụ thuộc:** `SCRUM-212`
-- **Trạng thái kiểm thử:** **PASS**
+- **Người thực hiện:** QA Team
 
-## 1. TỔNG QUAN KẾT QUẢ
-- **Tổng số Test Cases:** 5
-- **Số case PASS:** 5 (100%)
-- **Số case FAIL:** 0
-- **Số case BLOCKED:** 0
-- **Số Bug phát hiện:** 0
+## 2. Tổng hợp kết quả thực thi
+| Tổng số Test Case | Passed | Failed | Blocked | Tỷ lệ đạt (Pass Rate) |
+| :---: | :---: | :---: | :---: | :---: |
+| **6** | **6** | **0** | **0** | **100%** |
 
-## 2. BẰNG CHỨNG KIỂM THỬ MÃ NGUỒN & HỒI QUY BACKEND
-1. **Kết quả thực thi Maven Test (`2026-11-17T02:42:32Z`):**
-   - **Lệnh chạy:** `./mvnw test -Dtest=*Keyword*Test,*Routing*Test,SurveyControllerTest`
-   - **Kết quả:** `Tests run: 12, Failures: 0, Errors: 0, Skipped: 0` (`BUILD SUCCESS` trong `11.837 s` – `com.cxshield.backend.SurveyControllerTest`).
-   - Xác nhận toàn bộ luồng quét mã QR (`MC-B04`), chặn mã QR không hợp lệ (`INVALID_QR`), lưu phản hồi khảo sát và điều hướng đánh giá Google Maps vượt qua kiểm thử hồi quy.
-2. **Xác nhận logic API & bảo mật (`review_keywords`, `routing_rules`):**
-   - Đã rà soát và kiểm thử API thực tế thông qua `e2e/keywords_routing_e43.spec.js`: CRUD bộ từ khóa SEO theo ngành, phân quyền truy cập theo cơ sở, validation chặn ngưỡng chia luồng không hợp lệ, định tuyến động `4 sao -> M1-04` khi đặt ngưỡng `5 sao` và khôi phục quy tắc mặc định `4–5 sao -> M1-02`.
+## 3. Chi tiết kết quả từng kịch bản
+| Mã TC | Mô tả ngắn gọn | Kết quả | Bằng chứng / Ghi chú |
+| :--- | :--- | :---: | :--- |
+| `TC-226-01` | Hiển thị mặc định màn hình `D3-07` (ngưỡng `4–5 sao`, Review Gating, từ khóa F&B) | **PASS** | Ảnh chụp màn hình `D3-07` mặc định |
+| `TC-226-02` | Thêm từ khóa mới, cảnh báo trùng lặp, bật/tắt và xóa từ khóa | **PASS** | Ảnh chụp danh sách từ khóa & thông báo bắt lỗi trùng |
+| `TC-226-03` | Nạp bộ từ khóa mẫu theo ngành nghề (`Áp dụng mẫu ngành này`) | **PASS** | Ảnh chụp danh sách từ khóa sau khi áp dụng mẫu ngành |
+| `TC-226-04` | Chuyển đổi và lưu ngưỡng phân luồng sang `Chỉ 5 sao (Khắt khe)` | **PASS** | Ảnh chụp trạng thái thẻ `Chỉ 5 sao` được kích hoạt |
+| `TC-226-05` | Đồng bộ chip từ khóa đang bật sang Live Preview `M1-02` & phân tuyến 4★/5★ | **PASS** | Ảnh chụp vùng xem trước `M1-02` ghép từ khóa |
+| `TC-226-06` | Khôi phục ngưỡng mặc định `4 – 5 sao (Khuyên dùng)` | **PASS** | Ảnh chụp màn hình sau khi trả về ngưỡng `4–5 sao` |
 
-## 3. KẾT LUẬN & ĐỀ XUẤT
-Toàn bộ 5/5 test cases của `SCRUM-225` đạt trạng thái **PASS**, không phát sinh lỗi hồi quy trên Backend. Chuyển trạng thái task `SCRUM-225` sang **Done** trên Jira.
+## 4. Kết luận & Đánh giá chất lượng
+- Toàn bộ **6/6 kịch bản kiểm thử chức năng (100%)** cho màn hình quản trị từ khóa SEO và cấu hình ngưỡng chia luồng `D3-07` đều hoạt động chính xác theo đặc tả E4.3.
+- Cơ chế kiểm tra trùng lặp từ khóa, bật/tắt trạng thái hiển thị, áp dụng mẫu theo ngành và cập nhật tức thì ngưỡng phân luồng vận hành ổn định, không phát sinh lỗi giao diện hay sai lệch luồng điều hướng.
+- **Đề xuất:** Đạt tiêu chuẩn nghiệm thu (**Pass QA**), sẵn sàng đóng task **SCRUM-226**.
