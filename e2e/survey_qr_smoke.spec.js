@@ -4,21 +4,21 @@ const scenarios = [
   {
     name: '5 sao - đánh giá tích cực',
     stars: 5,
-    sentiment: 'POSITIVE',
+    sentiment: 'SATISFIED',
     screen: 'M1-02',
     urgentCall: false
   },
   {
     name: '3 sao - đánh giá tiêu cực',
     stars: 3,
-    sentiment: 'NEGATIVE',
+    sentiment: 'UNSATISFIED',
     screen: 'M1-04',
     urgentCall: false
   },
   {
     name: '1 sao - yêu cầu gọi khẩn cấp',
     stars: 1,
-    sentiment: 'NEGATIVE',
+    sentiment: 'UNSATISFIED',
     screen: 'M1-04',
     urgentCall: true
   }

@@ -1,4 +1,4 @@
-﻿name: Survey QR Smoke Test
+name: Survey QR Smoke Test
 
 on:
   push:
@@ -33,26 +33,33 @@ jobs:
         run: npm ci
 
       - name: Start Spring Boot backend
+        env:
+          SPRING_PROFILES_ACTIVE: smoke
         run: |
           chmod +x backend/mvnw
-          nohup ./backend/mvnw -f backend/pom.xml spring-boot:run > backend.log 2>&1 &
+          nohup ./backend/mvnw -f backend/pom.xml spring-boot:run -Dspring-boot.run.profiles=smoke > backend.log 2>&1 &
 
       - name: Wait for backend
         run: |
           for i in $(seq 1 60); do
-            if curl --fail --silent http://localhost:8080/api/v1/surveys/qr/MC-B04 > /dev/null; then
-              echo "Backend is ready!"
+            STATUS=$(curl --silent --output /tmp/backend_resp.json --write-out "%{http_code}" http://localhost:8080/api/v1/surveys/qr/MC-B04 || true)
+            if [ "$STATUS" -eq 200 ]; then
+              echo "Backend is ready! HTTP status: $STATUS"
               exit 0
             fi
+            echo "Attempt $i/60: Backend returned HTTP $STATUS, retrying in 5s..."
             sleep 5
           done
 
-          echo "Backend failed to start."
+          echo "Backend failed to start after 60 attempts."
+          echo "Last response body:"
+          cat /tmp/backend_resp.json || true
+          echo "=== Backend Log ==="
           cat backend.log
           exit 1
 
       - name: Run Survey QR smoke tests
-        run: npm run test:smoke
+        run: npx playwright test e2e/survey_qr_smoke.spec.js
 
       - name: Upload Playwright report
         if: always()
