@@ -24,6 +24,7 @@ class M101RatingScreen extends StatefulWidget {
 class _M101RatingScreenState extends State<M101RatingScreen> {
   late final SurveyApiService _apiService;
   late SurveyInitModel _surveyData;
+  late final Future<void> _initFuture;
   bool _isSubmitting = false;
   int? _hoveredStar;
   int? _selectedStar;
@@ -43,7 +44,7 @@ class _M101RatingScreenState extends State<M101RatingScreen> {
     _apiService = widget.apiService ?? SurveyApiService();
     // Khởi tạo ngay fallback để hiển thị tức thì (<1s)
     _surveyData = SurveyInitModel.fallback(widget.qrCode);
-    _loadSurveyData();
+    _initFuture = _loadSurveyData();
   }
 
   Future<void> _loadSurveyData() async {
@@ -64,6 +65,13 @@ class _M101RatingScreenState extends State<M101RatingScreen> {
     });
 
     try {
+      // Khách bấm sao trước khi backend trả phiên thật: chờ lượt tải phiên xong rồi mới gửi,
+      // tránh gửi mã phiên rỗng khiến đánh giá không được lưu (SCRUM-254).
+      if (_surveyData.sessionId.isEmpty) {
+        await _initFuture;
+        if (!mounted) return;
+      }
+
       // Gọi API ghi nhận kết quả và phân luồng cảm xúc
       final result = await _apiService.submitRating(
         sessionId: _surveyData.sessionId,

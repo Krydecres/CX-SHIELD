@@ -2,6 +2,7 @@ package com.cxshield.backend.repository;
 
 import com.cxshield.backend.entity.QrCode;
 import com.cxshield.backend.supabase.SupabaseAdminClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Repository;
 
@@ -23,12 +24,11 @@ public class QrCodeRepository {
     private final Map<UUID, QrCode> store = new ConcurrentHashMap<>();
     private final Map<String, UUID> codeIndex = new ConcurrentHashMap<>();
 
+    /**
+     * Chế độ bộ nhớ trong, chỉ dùng cho unit test: nạp sẵn một mã QR mẫu.
+     */
     public QrCodeRepository() {
-        this(null);
-    }
-
-    public QrCodeRepository(SupabaseAdminClient supabase) {
-        this.supabase = supabase;
+        this.supabase = null;
         UUID qrId = UUID.fromString("c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33");
         UUID branchId = UUID.fromString("b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22");
 
@@ -42,6 +42,16 @@ public class QrCodeRepository {
         );
         store.put(qrCode.getId(), qrCode);
         codeIndex.put(qrCode.getCode().trim().toUpperCase(), qrCode.getId());
+    }
+
+    /**
+     * Chế độ chạy thật: đọc ghi bảng qr_codes trên Supabase, không có dữ liệu mẫu.
+     * Phải có @Autowired vì lớp có hai constructor; thiếu nó Spring sẽ chọn constructor rỗng
+     * và backend chạy bằng bộ nhớ trong thay vì Supabase.
+     */
+    @Autowired
+    public QrCodeRepository(SupabaseAdminClient supabase) {
+        this.supabase = supabase;
     }
 
     public Optional<QrCode> findByCode(String code) {
@@ -93,12 +103,13 @@ public class QrCodeRepository {
         if (qrCode.getId() == null) {
             qrCode.setId(UUID.randomUUID());
         }
+        if (supabase != null) {
+            supabase.upsert("qr_codes", "id", qrCode);
+            return qrCode;
+        }
         store.put(qrCode.getId(), qrCode);
         if (qrCode.getCode() != null) {
             codeIndex.put(qrCode.getCode().trim().toUpperCase(), qrCode.getId());
-        }
-        if (supabase != null) {
-            supabase.upsert("qr_codes", "id", qrCode);
         }
         return qrCode;
     }

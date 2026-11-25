@@ -12,8 +12,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.core.ParameterizedTypeReference;
 
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -192,6 +194,37 @@ class SurveyRepositorySupabaseTest {
         verify(supabase).select(eq("review_platforms"), captor.capture(), any());
         assertThat(captor.getValue()).containsEntry("branch_id", "eq." + BRANCH_ID)
                 .containsEntry("is_active", "eq.true");
+    }
+
+    @Test
+    @DisplayName("Spring tạo các repository khảo sát bằng constructor có Supabase, không rơi về bộ nhớ trong")
+    void springWiresSupabaseIntoSurveyRepositories() throws Exception {
+        try (AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext()) {
+            ctx.registerBean(SupabaseAdminClient.class, () -> supabase);
+            ctx.register(QrCodeRepository.class, BranchRepository.class, BusinessRepository.class,
+                    SurveySessionRepository.class, SurveyResponseRepository.class,
+                    FeedbackRepository.class, ReviewPlatformRepository.class);
+            ctx.refresh();
+
+            for (Class<?> type : List.of(QrCodeRepository.class, BranchRepository.class, BusinessRepository.class,
+                    SurveySessionRepository.class, SurveyResponseRepository.class,
+                    FeedbackRepository.class, ReviewPlatformRepository.class)) {
+                Field field = type.getDeclaredField("supabase");
+                field.setAccessible(true);
+                assertThat(field.get(ctx.getBean(type)))
+                        .as(type.getSimpleName() + " phải dùng SupabaseAdminClient")
+                        .isSameAs(supabase);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("QrCodeRepository chạy với Supabase không chứa mã QR mẫu MC-B04")
+    void supabaseQrRepositoryHasNoSampleCode() {
+        when(supabase.select(eq("qr_codes"), anyMap(), any())).thenReturn(List.of());
+
+        assertThat(qrCodeRepository.findByCode("MC-B04")).isEmpty();
+        assertThat(qrCodeRepository.findAll()).isEmpty();
     }
 }
 

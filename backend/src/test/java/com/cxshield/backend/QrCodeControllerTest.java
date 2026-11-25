@@ -129,7 +129,9 @@ class QrCodeControllerTest {
         assertTrue(response.isSuccess());
         assertNotNull(response.getData().id());
         assertEquals(newBranchId, response.getData().branchId());
-        assertEquals("MC-B04", response.getData().code());
+        // Mã mặc định riêng theo chi nhánh để không trùng cột UNIQUE qr_codes.code
+        String expectedCode = "MC-" + newBranchId.toString().replace("-", "").substring(0, 8).toUpperCase();
+        assertEquals(expectedCode, response.getData().code());
 
         // Kiểm tra sau khi gọi thì chi nhánh đã có mã
         List<QrCodeResponseDto> branchQrs = controller.getQrCodes(newBranchId).getData();

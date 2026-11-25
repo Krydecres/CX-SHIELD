@@ -94,10 +94,11 @@ public class QrCodeController {
             return ApiResponse.success("Chi nhánh đã có mã QR", toDto(existing.getFirst()));
         }
 
+        // Cột qr_codes.code là UNIQUE nên mỗi chi nhánh cần mã riêng, lấy theo branchId.
         QrCode defaultQr = new QrCode(
                 UUID.randomUUID(),
                 branchId,
-                "MC-B04",
+                defaultCodeForBranch(branchId),
                 "TABLE",
                 "Bàn 04 (Mặc định)",
                 "ACTIVE"
@@ -105,6 +106,10 @@ public class QrCodeController {
 
         QrCode saved = qrCodeRepository.save(defaultQr);
         return ApiResponse.success("Đã khởi tạo mã QR mặc định cho chi nhánh", toDto(saved));
+    }
+
+    static String defaultCodeForBranch(UUID branchId) {
+        return "MC-" + branchId.toString().replace("-", "").substring(0, 8).toUpperCase();
     }
 
     private String generateCodeForType(String type) {

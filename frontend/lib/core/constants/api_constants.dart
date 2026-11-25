@@ -10,5 +10,7 @@ class ApiConstants {
   static const String feedbackEndpoint = '$baseUrl/feedbacks';
   static const String googleRedirectEndpoint = '$baseUrl/surveys/google-redirect';
   static const String publicReviewBypassEndpoint = '$baseUrl/surveys/public-review';
-  static const Duration timeout = Duration(milliseconds: 3000);
+  // Backend lưu khảo sát qua nhiều lượt gọi Supabase (đo thực tế 2–3 giây mỗi request),
+  // nên 3 giây làm request bị hủy và rơi về dữ liệu dự phòng mà không lưu được (SCRUM-254).
+  static const Duration timeout = Duration(seconds: 10);
 }

@@ -2,6 +2,7 @@ package com.cxshield.backend.repository;
 
 import com.cxshield.backend.entity.Business;
 import com.cxshield.backend.supabase.SupabaseAdminClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Repository;
 
@@ -22,10 +23,16 @@ public class BusinessRepository {
     private final SupabaseAdminClient supabase;
     private final Map<UUID, Business> store = new java.util.concurrent.ConcurrentHashMap<>();
 
+    /** Chế độ bộ nhớ trong, chỉ dùng cho unit test. */
     public BusinessRepository() {
         this(null);
     }
 
+    /**
+     * Chế độ chạy thật qua Supabase. Phải có @Autowired vì lớp có hai constructor;
+     * thiếu nó Spring sẽ chọn constructor rỗng và bỏ qua Supabase.
+     */
+    @Autowired
     public BusinessRepository(SupabaseAdminClient supabase) {
         this.supabase = supabase;
     }
