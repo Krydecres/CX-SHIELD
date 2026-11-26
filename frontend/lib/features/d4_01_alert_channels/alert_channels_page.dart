@@ -101,13 +101,12 @@ class _AlertChannelsPageState extends State<AlertChannelsPage> {
                   key: ValueKey('${config.branchId}-${kind.apiCode}'),
                   channel: config.channel(kind),
                   canEdit: _canEdit,
-                  onSave: ({required enabled, botToken, chatId, webhookUrl, email}) => _api.save(
+                  onSave: ({required enabled, botToken, chatId, email}) => _api.save(
                     config.branchId,
                     kind,
                     enabled: enabled,
                     botToken: botToken,
                     chatId: chatId,
-                    webhookUrl: webhookUrl,
                     email: email,
                   ),
                   onTest: () => _api.sendTest(config.branchId, kind),
@@ -124,7 +123,6 @@ typedef SaveAlertChannel = Future<AlertChannel> Function({
   required bool enabled,
   String? botToken,
   String? chatId,
-  String? webhookUrl,
   String? email,
 });
 
@@ -151,7 +149,6 @@ class _AlertChannelCardState extends State<AlertChannelCard> {
   final _formKey = GlobalKey<FormState>();
   late final _botToken = TextEditingController();
   late final _chatId = TextEditingController(text: widget.channel.chatId);
-  late final _webhookUrl = TextEditingController();
   late final _email = TextEditingController(text: widget.channel.email);
   late AlertChannel _channel = widget.channel;
   late bool _enabled = widget.channel.configured ? widget.channel.enabled : true;
@@ -165,7 +162,6 @@ class _AlertChannelCardState extends State<AlertChannelCard> {
   void dispose() {
     _botToken.dispose();
     _chatId.dispose();
-    _webhookUrl.dispose();
     _email.dispose();
     super.dispose();
   }
@@ -184,14 +180,12 @@ class _AlertChannelCardState extends State<AlertChannelCard> {
         enabled: _enabled,
         botToken: _nonBlank(_botToken),
         chatId: _nonBlank(_chatId),
-        webhookUrl: _nonBlank(_webhookUrl),
         email: _nonBlank(_email),
       );
       if (!mounted) return;
       setState(() {
         _channel = saved;
         _botToken.clear();
-        _webhookUrl.clear();
         _notice = (text: 'Đã lưu cấu hình kênh.', type: NoticeType.success);
       });
     } on ApiException catch (e) {
@@ -217,7 +211,6 @@ class _AlertChannelCardState extends State<AlertChannelCard> {
           enabled: _channel.enabled,
           maskedBotToken: _channel.maskedBotToken,
           chatId: _channel.chatId,
-          maskedWebhookUrl: _channel.maskedWebhookUrl,
           email: _channel.email,
           lastTestedAt: result.lastTestedAt ?? _channel.lastTestedAt,
         );
@@ -293,34 +286,13 @@ class _AlertChannelCardState extends State<AlertChannelCard> {
   }
 
   List<Widget> _fields(bool editable) => switch (_channel.kind) {
-        AlertChannelKind.telegram => [
-            const FormLabel('Bot Token', required: true),
-            TextFormField(
-              controller: _botToken,
-              enabled: editable,
-              obscureText: true,
-              decoration: InputDecoration(hintText: _channel.maskedBotToken ?? '123456789:AAE...'),
-              validator: (value) => validateBotToken(value, hasSavedToken: _channel.maskedBotToken != null),
-            ),
-            if (_channel.maskedBotToken != null) const _KeepSavedHint(),
-            const SizedBox(height: AppSpace.md),
-            const FormLabel('Chat ID', required: true),
-            TextFormField(
-              controller: _chatId,
-              enabled: editable,
-              decoration: const InputDecoration(hintText: '-1001234567890'),
-              validator: validateChatId,
-            ),
-          ],
+        AlertChannelKind.telegram => _botFields(editable, tokenHint: '123456789:AAE...', chatHint: '-1001234567890'),
         AlertChannelKind.zalo => [
-            const FormLabel('Webhook URL', required: true),
-            TextFormField(
-              controller: _webhookUrl,
-              enabled: editable,
-              decoration: InputDecoration(hintText: _channel.maskedWebhookUrl ?? 'https://...'),
-              validator: (value) => validateWebhookUrl(value, hasSavedUrl: _channel.maskedWebhookUrl != null),
+            ..._botFields(editable, tokenHint: '12345689:abc-xyz', chatHint: '6ede9afa66b88fe6d6a9'),
+            const _FieldHelp(
+              'Tạo bot: trong Zalo tìm "Zalo Bot Manager" → Tạo bot, Zalo gửi Bot Token qua tin nhắn. '
+              'Người nhận cảnh báo nhắn cho bot một tin trước; Chat ID lấy ở message.chat.id khi gọi getUpdates.',
             ),
-            if (_channel.maskedWebhookUrl != null) const _KeepSavedHint(),
           ],
         AlertChannelKind.email => [
             const FormLabel('Email nhận cảnh báo', required: true),
@@ -333,12 +305,49 @@ class _AlertChannelCardState extends State<AlertChannelCard> {
             ),
           ],
       };
+
+  /// Telegram và Zalo Bot cùng cấu hình Bot Token + Chat ID.
+  List<Widget> _botFields(bool editable, {required String tokenHint, required String chatHint}) => [
+        const FormLabel('Bot Token', required: true),
+        TextFormField(
+          controller: _botToken,
+          enabled: editable,
+          obscureText: true,
+          decoration: InputDecoration(hintText: _channel.maskedBotToken ?? tokenHint),
+          validator: (value) =>
+              validateBotToken(value, hasSavedToken: _channel.maskedBotToken != null, kind: _channel.kind),
+        ),
+        if (_channel.maskedBotToken != null) const _KeepSavedHint(),
+        const SizedBox(height: AppSpace.md),
+        const FormLabel('Chat ID', required: true),
+        TextFormField(
+          controller: _chatId,
+          enabled: editable,
+          decoration: InputDecoration(hintText: chatHint),
+          validator: (value) => validateChatId(value, kind: _channel.kind),
+        ),
+      ];
 }
 
 /// Trạng thái kênh hiển thị dưới tên kênh.
 String channelStateLabel(AlertChannel channel) {
   if (!channel.configured) return 'Chưa cấu hình';
   return channel.enabled ? 'Đang bật' : 'Đang tắt';
+}
+
+class _FieldHelp extends StatelessWidget {
+  const _FieldHelp(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: AppSpace.sm),
+        child: Text(
+          text,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.colors.textMuted),
+        ),
+      );
 }
 
 class _KeepSavedHint extends StatelessWidget {

@@ -38,25 +38,26 @@ public class AlertChannelService {
 	private static final String NO_PERMISSION = "Chỉ Chủ cơ sở hoặc Quản lý chi nhánh được cấu hình kênh cảnh báo.";
 	private static final Pattern BOT_TOKEN = Pattern.compile("^\\d{5,}:[A-Za-z0-9_-]{20,}$");
 	private static final Pattern CHAT_ID = Pattern.compile("^(-?\\d{1,20}|@[A-Za-z0-9_]{5,32})$");
+	/** Zalo Bot: token dạng "số:chuỗi bí mật" (ví dụ 12345689:abc-xyz), Chat ID là chuỗi do Zalo cấp. */
+	private static final Pattern ZALO_BOT_TOKEN = Pattern.compile("^\\d{3,}:[A-Za-z0-9_-]{6,}$");
+	private static final Pattern ZALO_CHAT_ID = Pattern.compile("^[A-Za-z0-9._-]{3,64}$");
 	private static final Pattern EMAIL = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
 	private final AccountRepository accountRepository;
 	private final AlertChannelRepository channelRepository;
-	private final WebhookUrlValidator urlValidator;
 	private final Map<AlertChannelType, AlertSender> senders;
 	private final Clock clock;
 
 	@Autowired
 	public AlertChannelService(AccountRepository accountRepository, AlertChannelRepository channelRepository,
-			WebhookUrlValidator urlValidator, List<AlertSender> senders) {
-		this(accountRepository, channelRepository, urlValidator, senders, Clock.systemUTC());
+			List<AlertSender> senders) {
+		this(accountRepository, channelRepository, senders, Clock.systemUTC());
 	}
 
 	AlertChannelService(AccountRepository accountRepository, AlertChannelRepository channelRepository,
-			WebhookUrlValidator urlValidator, List<AlertSender> senders, Clock clock) {
+			List<AlertSender> senders, Clock clock) {
 		this.accountRepository = accountRepository;
 		this.channelRepository = channelRepository;
-		this.urlValidator = urlValidator;
 		this.senders = senders.stream().collect(Collectors.toMap(AlertSender::type, Function.identity()));
 		this.clock = clock;
 	}
@@ -117,32 +118,8 @@ public class AlertChannelService {
 	private Map<String, Object> validatedValues(AlertChannelType type, SaveAlertChannelRequest request, AlertChannelRow existing) {
 		Map<String, Object> values = new LinkedHashMap<>();
 		switch (type) {
-			case TELEGRAM -> {
-				String botToken = trimmed(request.botToken());
-				if (botToken != null) {
-					requireMatch(BOT_TOKEN, botToken, "INVALID_BOT_TOKEN", "Bot Token không đúng định dạng.");
-					values.put("bot_token", botToken);
-				}
-				else if (existing == null || existing.botToken() == null) {
-					throw ApiException.unprocessable("INVALID_BOT_TOKEN", "Vui lòng nhập Bot Token.");
-				}
-				String chatId = trimmed(request.chatId());
-				if (chatId == null) {
-					throw ApiException.unprocessable("INVALID_CHAT_ID", "Vui lòng nhập Chat ID.");
-				}
-				requireMatch(CHAT_ID, chatId, "INVALID_CHAT_ID", "Chat ID không đúng định dạng.");
-				values.put("chat_id", chatId);
-			}
-			case ZALO -> {
-				String webhookUrl = trimmed(request.webhookUrl());
-				if (webhookUrl != null) {
-					urlValidator.validate(webhookUrl);
-					values.put("webhook_url", webhookUrl);
-				}
-				else if (existing == null || existing.webhookUrl() == null) {
-					throw ApiException.unprocessable("INVALID_WEBHOOK_URL", "Vui lòng nhập Webhook URL.");
-				}
-			}
+			case TELEGRAM -> putBotAndChat(values, request, existing, BOT_TOKEN, CHAT_ID);
+			case ZALO -> putBotAndChat(values, request, existing, ZALO_BOT_TOKEN, ZALO_CHAT_ID);
 			case EMAIL -> {
 				String email = trimmed(request.email());
 				if (email == null) {
@@ -153,6 +130,27 @@ public class AlertChannelService {
 			}
 		}
 		return values;
+	}
+
+	/**
+	 * Telegram và Zalo Bot cùng cấu hình Bot Token + Chat ID. Để trống Bot Token khi sửa nghĩa là giữ token đã lưu.
+	 */
+	private static void putBotAndChat(Map<String, Object> values, SaveAlertChannelRequest request, AlertChannelRow existing,
+			Pattern tokenPattern, Pattern chatIdPattern) {
+		String botToken = trimmed(request.botToken());
+		if (botToken != null) {
+			requireMatch(tokenPattern, botToken, "INVALID_BOT_TOKEN", "Bot Token không đúng định dạng.");
+			values.put("bot_token", botToken);
+		}
+		else if (existing == null || existing.botToken() == null) {
+			throw ApiException.unprocessable("INVALID_BOT_TOKEN", "Vui lòng nhập Bot Token.");
+		}
+		String chatId = trimmed(request.chatId());
+		if (chatId == null) {
+			throw ApiException.unprocessable("INVALID_CHAT_ID", "Vui lòng nhập Chat ID.");
+		}
+		requireMatch(chatIdPattern, chatId, "INVALID_CHAT_ID", "Chat ID không đúng định dạng.");
+		values.put("chat_id", chatId);
 	}
 
 	private BranchRow requireBranch(String token, UUID branchId) {
@@ -172,11 +170,11 @@ public class AlertChannelService {
 
 	private static AlertChannelResponse toResponse(AlertChannelRow row) {
 		return new AlertChannelResponse(row.type(), true, row.enabled(), AlertMasking.maskToken(row.botToken()), row.chatId(),
-				AlertMasking.maskUrl(row.webhookUrl()), row.email(), row.lastTestedAt());
+				row.email(), row.lastTestedAt());
 	}
 
 	private static AlertChannelResponse notConfigured(AlertChannelType type) {
-		return new AlertChannelResponse(type, false, false, null, null, null, null, null);
+		return new AlertChannelResponse(type, false, false, null, null, null, null);
 	}
 
 }

@@ -42,11 +42,12 @@ class AlertChannelServiceTest {
 	private static final UUID BUSINESS_ID = UUID.randomUUID();
 	private static final UUID CHANNEL_ID = UUID.randomUUID();
 	private static final String BOT_TOKEN = "123456789:AAEabcdefghijklmnopqrstuvwxyz_12345";
+	private static final String ZALO_TOKEN = "12345689:abcdef-xyz";
+	private static final String ZALO_CHAT = "6ede9afa66b88fe6d6a9";
 	private static final Instant NOW = Instant.parse("2026-11-06T03:00:00Z");
 
 	private AccountRepository accountRepository;
 	private AlertChannelRepository channelRepository;
-	private WebhookUrlValidator urlValidator;
 	private AlertSender telegramSender;
 	private AlertChannelService service;
 
@@ -54,10 +55,9 @@ class AlertChannelServiceTest {
 	void setUp() {
 		accountRepository = mock(AccountRepository.class);
 		channelRepository = mock(AlertChannelRepository.class);
-		urlValidator = mock(WebhookUrlValidator.class);
 		telegramSender = mock(AlertSender.class);
 		when(telegramSender.type()).thenReturn(AlertChannelType.TELEGRAM);
-		service = new AlertChannelService(accountRepository, channelRepository, urlValidator, List.of(telegramSender),
+		service = new AlertChannelService(accountRepository, channelRepository, List.of(telegramSender),
 				Clock.fixed(NOW, ZoneOffset.UTC));
 		when(accountRepository.findBranch(TOKEN, BRANCH_ID)).thenReturn(
 				Optional.of(new BranchRow(BRANCH_ID, BUSINESS_ID, "CN01", "Maison Q1", null, null, "ACTIVE", null)));
@@ -81,17 +81,18 @@ class AlertChannelServiceTest {
 	}
 
 	@Test
-	void masksTokenAndWebhookInResponse() {
+	void masksBotTokensInResponse() {
 		when(channelRepository.findChannels(TOKEN, BRANCH_ID)).thenReturn(List.of(telegram(true),
-				new AlertChannelRow(UUID.randomUUID(), BUSINESS_ID, BRANCH_ID, AlertChannelType.ZALO, null, null,
-						"https://hook.example.com/secret-path", null, true, null)));
+				new AlertChannelRow(UUID.randomUUID(), BUSINESS_ID, BRANCH_ID, AlertChannelType.ZALO, ZALO_TOKEN, ZALO_CHAT,
+						null, null, true, null)));
 
 		AlertChannelsResponse response = service.getChannels(TOKEN, BRANCH_ID);
 
 		AlertChannelResponse telegram = response.channels().get(0);
 		assertThat(telegram.maskedBotToken()).endsWith("2345").doesNotContain(BOT_TOKEN);
 		AlertChannelResponse zalo = response.channels().get(1);
-		assertThat(zalo.maskedWebhookUrl()).contains("hook.example.com").doesNotContain("secret-path");
+		assertThat(zalo.maskedBotToken()).endsWith("-xyz").doesNotContain(ZALO_TOKEN);
+		assertThat(zalo.chatId()).isEqualTo(ZALO_CHAT);
 	}
 
 	@Test
@@ -114,7 +115,7 @@ class AlertChannelServiceTest {
 
 	@Test
 	void createsTelegramChannel() {
-		service.save(TOKEN, BRANCH_ID, AlertChannelType.TELEGRAM, new SaveAlertChannelRequest(true, BOT_TOKEN, "-100123", null, null));
+		service.save(TOKEN, BRANCH_ID, AlertChannelType.TELEGRAM, new SaveAlertChannelRequest(true, BOT_TOKEN, "-100123", null));
 
 		ArgumentCaptor<Map<String, Object>> values = valuesCaptor();
 		verify(channelRepository).insertChannel(eq(TOKEN), values.capture());
@@ -130,7 +131,7 @@ class AlertChannelServiceTest {
 	void keepsSavedTokenWhenLeftBlank() {
 		when(channelRepository.findChannel(TOKEN, BRANCH_ID, AlertChannelType.TELEGRAM)).thenReturn(Optional.of(telegram(true)));
 
-		service.save(TOKEN, BRANCH_ID, AlertChannelType.TELEGRAM, new SaveAlertChannelRequest(false, " ", "@maison_alerts", null, null));
+		service.save(TOKEN, BRANCH_ID, AlertChannelType.TELEGRAM, new SaveAlertChannelRequest(false, " ", "@maison_alerts", null));
 
 		ArgumentCaptor<Map<String, Object>> values = valuesCaptor();
 		verify(channelRepository).updateChannel(eq(TOKEN), eq(CHANNEL_ID), values.capture());
@@ -141,51 +142,59 @@ class AlertChannelServiceTest {
 
 	@Test
 	void newTelegramChannelNeedsToken() {
-		assertCode(new SaveAlertChannelRequest(true, null, "123", null, null), AlertChannelType.TELEGRAM, "INVALID_BOT_TOKEN");
+		assertCode(new SaveAlertChannelRequest(true, null, "123", null), AlertChannelType.TELEGRAM, "INVALID_BOT_TOKEN");
 	}
 
 	@Test
 	void rejectsMalformedToken() {
-		assertCode(new SaveAlertChannelRequest(true, "not-a-token", "123", null, null), AlertChannelType.TELEGRAM, "INVALID_BOT_TOKEN");
+		assertCode(new SaveAlertChannelRequest(true, "not-a-token", "123", null), AlertChannelType.TELEGRAM, "INVALID_BOT_TOKEN");
 	}
 
 	@Test
 	void rejectsMissingOrMalformedChatId() {
-		assertCode(new SaveAlertChannelRequest(true, BOT_TOKEN, null, null, null), AlertChannelType.TELEGRAM, "INVALID_CHAT_ID");
-		assertCode(new SaveAlertChannelRequest(true, BOT_TOKEN, "chat id", null, null), AlertChannelType.TELEGRAM, "INVALID_CHAT_ID");
+		assertCode(new SaveAlertChannelRequest(true, BOT_TOKEN, null, null), AlertChannelType.TELEGRAM, "INVALID_CHAT_ID");
+		assertCode(new SaveAlertChannelRequest(true, BOT_TOKEN, "chat id", null), AlertChannelType.TELEGRAM, "INVALID_CHAT_ID");
 	}
 
 	@Test
-	void validatesZaloWebhookUrl() {
-		service.save(TOKEN, BRANCH_ID, AlertChannelType.ZALO,
-				new SaveAlertChannelRequest(true, null, null, " https://hook.example.com/a ", null));
+	void savesZaloBotTokenAndChatId() {
+		service.save(TOKEN, BRANCH_ID, AlertChannelType.ZALO, new SaveAlertChannelRequest(true, " " + ZALO_TOKEN + " ", ZALO_CHAT, null));
 
-		verify(urlValidator).validate("https://hook.example.com/a");
+		ArgumentCaptor<Map<String, Object>> values = valuesCaptor();
+		verify(channelRepository).insertChannel(eq(TOKEN), values.capture());
+		assertThat(values.getValue()).containsEntry("bot_token", ZALO_TOKEN)
+			.containsEntry("chat_id", ZALO_CHAT)
+			.containsEntry("type", "ZALO")
+			.doesNotContainKey("webhook_url");
 	}
 
 	@Test
-	void rejectsInternalZaloWebhookUrl() {
-		doThrow(ApiException.unprocessable("INVALID_WEBHOOK_URL", "x")).when(urlValidator).validate(anyString());
+	void newZaloChannelNeedsBotToken() {
+		assertCode(new SaveAlertChannelRequest(true, null, ZALO_CHAT, null), AlertChannelType.ZALO, "INVALID_BOT_TOKEN");
+	}
 
-		assertCode(new SaveAlertChannelRequest(true, null, null, "https://10.0.0.1/a", null), AlertChannelType.ZALO, "INVALID_WEBHOOK_URL");
+	@Test
+	void rejectsMalformedZaloBotToken() {
+		assertCode(new SaveAlertChannelRequest(true, "khong-phai-token", ZALO_CHAT, null), AlertChannelType.ZALO, "INVALID_BOT_TOKEN");
+	}
+
+	@Test
+	void rejectsMissingOrMalformedZaloChatId() {
+		assertCode(new SaveAlertChannelRequest(true, ZALO_TOKEN, null, null), AlertChannelType.ZALO, "INVALID_CHAT_ID");
+		assertCode(new SaveAlertChannelRequest(true, ZALO_TOKEN, "chat id", null), AlertChannelType.ZALO, "INVALID_CHAT_ID");
 		verify(channelRepository, never()).insertChannel(any(), anyMap());
 	}
 
 	@Test
-	void newZaloChannelNeedsUrl() {
-		assertCode(new SaveAlertChannelRequest(true, null, null, null, null), AlertChannelType.ZALO, "INVALID_WEBHOOK_URL");
-	}
-
-	@Test
 	void rejectsMalformedEmail() {
-		assertCode(new SaveAlertChannelRequest(true, null, null, null, "a@b"), AlertChannelType.EMAIL, "INVALID_EMAIL");
-		assertCode(new SaveAlertChannelRequest(true, null, null, null, null), AlertChannelType.EMAIL, "INVALID_EMAIL");
+		assertCode(new SaveAlertChannelRequest(true, null, null, "a@b"), AlertChannelType.EMAIL, "INVALID_EMAIL");
+		assertCode(new SaveAlertChannelRequest(true, null, null, null), AlertChannelType.EMAIL, "INVALID_EMAIL");
 	}
 
 	@Test
 	void savesEmailChannel() {
 		AlertChannelResponse response = service.save(TOKEN, BRANCH_ID, AlertChannelType.EMAIL,
-				new SaveAlertChannelRequest(true, null, null, null, "quanly@maison.vn"));
+				new SaveAlertChannelRequest(true, null, null, "quanly@maison.vn"));
 
 		assertThat(response.email()).isEqualTo("quanly@maison.vn");
 		assertThat(response.configured()).isTrue();
@@ -195,7 +204,7 @@ class AlertChannelServiceTest {
 	void reportsForbiddenWhenRlsBlocksInsert() {
 		when(channelRepository.insertChannel(eq(TOKEN), anyMap())).thenReturn(Optional.empty());
 
-		assertCode(new SaveAlertChannelRequest(true, BOT_TOKEN, "123", null, null), AlertChannelType.TELEGRAM, "FORBIDDEN");
+		assertCode(new SaveAlertChannelRequest(true, BOT_TOKEN, "123", null), AlertChannelType.TELEGRAM, "FORBIDDEN");
 	}
 
 	@Test
@@ -203,7 +212,7 @@ class AlertChannelServiceTest {
 		when(channelRepository.findChannel(TOKEN, BRANCH_ID, AlertChannelType.TELEGRAM)).thenReturn(Optional.of(telegram(true)));
 		when(channelRepository.updateChannel(eq(TOKEN), any(), anyMap())).thenReturn(Optional.empty());
 
-		assertCode(new SaveAlertChannelRequest(true, null, "123", null, null), AlertChannelType.TELEGRAM, "FORBIDDEN");
+		assertCode(new SaveAlertChannelRequest(true, null, "123", null), AlertChannelType.TELEGRAM, "FORBIDDEN");
 	}
 
 	@Test

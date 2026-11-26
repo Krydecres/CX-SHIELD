@@ -15,7 +15,6 @@ class AlertChannelApi {
     required bool enabled,
     String? botToken,
     String? chatId,
-    String? webhookUrl,
     String? email,
   }) async =>
       AlertChannel.fromJson(
@@ -23,7 +22,6 @@ class AlertChannelApi {
           'enabled': enabled,
           'botToken': botToken,
           'chatId': chatId,
-          'webhookUrl': webhookUrl,
           'email': email,
         }) as Map<String, dynamic>,
       );

@@ -18,17 +18,17 @@ public final class AlertDtos {
 	}
 
 	/**
-	 * Bot Token và Webhook URL chỉ trả về dạng đã che, không bao giờ trả giá trị gốc cho giao diện.
+	 * Bot Token chỉ trả về dạng đã che, không bao giờ trả giá trị gốc cho giao diện.
 	 */
 	public record AlertChannelResponse(AlertChannelType type, boolean configured, boolean enabled, String maskedBotToken,
-			String chatId, String maskedWebhookUrl, String email, OffsetDateTime lastTestedAt) {
+			String chatId, String email, OffsetDateTime lastTestedAt) {
 	}
 
 	/**
-	 * Để trống botToken hoặc webhookUrl khi sửa nghĩa là giữ giá trị đã lưu.
+	 * Để trống botToken khi sửa nghĩa là giữ giá trị đã lưu.
 	 */
 	public record SaveAlertChannelRequest(boolean enabled, @Size(max = 200) String botToken, @Size(max = 100) String chatId,
-			@Size(max = 500) String webhookUrl, @Size(max = 254) String email) {
+			@Size(max = 254) String email) {
 
 		@Override
 		public String toString() {

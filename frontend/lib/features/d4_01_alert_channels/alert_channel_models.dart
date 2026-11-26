@@ -1,7 +1,7 @@
 /// Loại kênh trên D4-01; mã API trùng với enum alert_channel_type trong CSDL.
 enum AlertChannelKind {
   telegram('TELEGRAM', 'Telegram Bot'),
-  zalo('ZALO', 'Zalo Webhook'),
+  zalo('ZALO', 'Zalo Bot'),
   email('EMAIL', 'Email');
 
   const AlertChannelKind(this.apiCode, this.label);
@@ -20,7 +20,6 @@ class AlertChannel {
     required this.enabled,
     this.maskedBotToken,
     this.chatId,
-    this.maskedWebhookUrl,
     this.email,
     this.lastTestedAt,
   });
@@ -31,7 +30,6 @@ class AlertChannel {
         enabled: json['enabled'] as bool? ?? false,
         maskedBotToken: json['maskedBotToken'] as String?,
         chatId: json['chatId'] as String?,
-        maskedWebhookUrl: json['maskedWebhookUrl'] as String?,
         email: json['email'] as String?,
         lastTestedAt: json['lastTestedAt'] == null ? null : DateTime.parse(json['lastTestedAt'] as String).toLocal(),
       );
@@ -41,7 +39,6 @@ class AlertChannel {
   final bool enabled;
   final String? maskedBotToken;
   final String? chatId;
-  final String? maskedWebhookUrl;
   final String? email;
   final DateTime? lastTestedAt;
 }
@@ -89,23 +86,19 @@ class AlertTestResult {
 }
 
 /// Kiểm tra nhanh ở giao diện; backend vẫn kiểm tra lại đầy đủ.
-String? validateBotToken(String? value, {required bool hasSavedToken}) {
+/// Telegram: token dạng 123456789:AAE..., Chat ID là số hoặc @kenh. Zalo Bot: token dạng 12345689:abc-xyz, Chat ID do Zalo cấp.
+String? validateBotToken(String? value, {required bool hasSavedToken, AlertChannelKind kind = AlertChannelKind.telegram}) {
   final text = value?.trim() ?? '';
   if (text.isEmpty) return hasSavedToken ? null : 'Vui lòng nhập Bot Token.';
-  return RegExp(r'^\d{5,}:[A-Za-z0-9_-]{20,}$').hasMatch(text) ? null : 'Bot Token không đúng định dạng.';
+  final pattern = kind == AlertChannelKind.zalo ? r'^\d{3,}:[A-Za-z0-9_-]{6,}$' : r'^\d{5,}:[A-Za-z0-9_-]{20,}$';
+  return RegExp(pattern).hasMatch(text) ? null : 'Bot Token không đúng định dạng.';
 }
 
-String? validateChatId(String? value) {
+String? validateChatId(String? value, {AlertChannelKind kind = AlertChannelKind.telegram}) {
   final text = value?.trim() ?? '';
   if (text.isEmpty) return 'Vui lòng nhập Chat ID.';
-  return RegExp(r'^(-?\d{1,20}|@[A-Za-z0-9_]{5,32})$').hasMatch(text) ? null : 'Chat ID không đúng định dạng.';
-}
-
-String? validateWebhookUrl(String? value, {required bool hasSavedUrl}) {
-  final text = value?.trim() ?? '';
-  if (text.isEmpty) return hasSavedUrl ? null : 'Vui lòng nhập Webhook URL.';
-  final uri = Uri.tryParse(text);
-  return uri != null && uri.scheme == 'https' && uri.host.isNotEmpty ? null : 'Webhook URL phải là địa chỉ https hợp lệ.';
+  final pattern = kind == AlertChannelKind.zalo ? r'^[A-Za-z0-9._-]{3,64}$' : r'^(-?\d{1,20}|@[A-Za-z0-9_]{5,32})$';
+  return RegExp(pattern).hasMatch(text) ? null : 'Chat ID không đúng định dạng.';
 }
 
 String? validateAlertEmail(String? value) {

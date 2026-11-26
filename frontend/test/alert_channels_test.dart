@@ -72,11 +72,14 @@ void main() {
       expect(validateChatId('chat id'), isNotNull);
     });
 
-    test('Webhook URL', () {
-      expect(validateWebhookUrl('https://hook.example.com/a', hasSavedUrl: false), isNull);
-      expect(validateWebhookUrl('', hasSavedUrl: true), isNull);
-      expect(validateWebhookUrl('', hasSavedUrl: false), isNotNull);
-      expect(validateWebhookUrl('http://hook.example.com', hasSavedUrl: true), isNotNull);
+    test('Zalo Bot', () {
+      const zalo = AlertChannelKind.zalo;
+      expect(validateBotToken('12345689:abc-xyz', hasSavedToken: false, kind: zalo), isNull);
+      expect(validateBotToken('khong-phai-token', hasSavedToken: false, kind: zalo), isNotNull);
+      expect(validateChatId('6ede9afa66b88fe6d6a9', kind: zalo), isNull);
+      expect(validateChatId('abc.xyz', kind: zalo), isNull);
+      expect(validateChatId('', kind: zalo), isNotNull);
+      expect(validateChatId('chat id', kind: zalo), isNotNull);
     });
 
     test('Email', () {
@@ -143,7 +146,7 @@ void main() {
                   channel: channel,
                   canEdit: canEdit,
                   onSave: onSave ??
-                      ({required enabled, botToken, chatId, webhookUrl, email}) async =>
+                      ({required enabled, botToken, chatId, email}) async =>
                           AlertChannel(kind: channel.kind, configured: true, enabled: enabled),
                   onTest: onTest ?? () async => const AlertTestResult(success: true, message: 'Đã gửi'),
                 ),
@@ -167,7 +170,7 @@ void main() {
       String? sentToken;
       await tester.pumpWidget(card(
         const AlertChannel(kind: AlertChannelKind.telegram, configured: false, enabled: false),
-        onSave: ({required enabled, botToken, chatId, webhookUrl, email}) async {
+        onSave: ({required enabled, botToken, chatId, email}) async {
           sentToken = botToken;
           return AlertChannel(
             kind: AlertChannelKind.telegram,
@@ -218,7 +221,7 @@ void main() {
     testWidgets('lỗi API hiện trên thẻ', (tester) async {
       await tester.pumpWidget(card(
         const AlertChannel(kind: AlertChannelKind.email, configured: true, enabled: true, email: 'a@b.vn'),
-        onSave: ({required enabled, botToken, chatId, webhookUrl, email}) async =>
+        onSave: ({required enabled, botToken, chatId, email}) async =>
             throw ApiException(statusCode: 403, code: 'FORBIDDEN', message: 'Không có quyền'),
       ));
 
@@ -230,7 +233,7 @@ void main() {
 
     testWidgets('người không có quyền chỉ xem', (tester) async {
       await tester.pumpWidget(card(
-        const AlertChannel(kind: AlertChannelKind.zalo, configured: true, enabled: true, maskedWebhookUrl: 'https://a/••'),
+        const AlertChannel(kind: AlertChannelKind.zalo, configured: true, enabled: true, maskedBotToken: '••••••-xyz'),
         canEdit: false,
       ));
 

@@ -19,17 +19,4 @@ final class AlertMasking {
 		return token.length() <= 4 ? DOTS : DOTS + token.substring(token.length() - 4);
 	}
 
-	static String maskUrl(String url) {
-		if (url == null || url.isBlank()) {
-			return null;
-		}
-		try {
-			String host = URI.create(url).getHost();
-			return host == null ? DOTS : "https://" + host + "/" + DOTS;
-		}
-		catch (IllegalArgumentException ex) {
-			return DOTS;
-		}
-	}
-
 }

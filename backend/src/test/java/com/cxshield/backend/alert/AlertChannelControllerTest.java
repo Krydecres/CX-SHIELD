@@ -36,7 +36,7 @@ class AlertChannelControllerTest {
 
 	@Test
 	void savePassesRequest() {
-		SaveAlertChannelRequest request = new SaveAlertChannelRequest(true, null, null, null, "a@b.vn");
+		SaveAlertChannelRequest request = new SaveAlertChannelRequest(true, null, null, "a@b.vn");
 
 		controller.save(jwt, BRANCH_ID, AlertChannelType.EMAIL, request);
 
@@ -52,7 +52,7 @@ class AlertChannelControllerTest {
 
 	@Test
 	void requestToStringHidesSecrets() {
-		String text = new SaveAlertChannelRequest(true, "secret-token", "1", "https://secret.example.com", null).toString();
+		String text = new SaveAlertChannelRequest(true, "secret-token", "1", "secret@example.com").toString();
 
 		assertThat(text).doesNotContain("secret");
 	}

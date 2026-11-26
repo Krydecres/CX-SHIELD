@@ -22,15 +22,4 @@ class AlertMaskingTest {
 		assertThat(AlertMasking.maskToken(" ")).isNull();
 	}
 
-	@Test
-	void urlKeepsOnlyHost() {
-		assertThat(AlertMasking.maskUrl("https://hook.example.com/path?key=secret")).isEqualTo("https://hook.example.com/••••••");
-	}
-
-	@Test
-	void emptyOrBrokenUrl() {
-		assertThat(AlertMasking.maskUrl(null)).isNull();
-		assertThat(AlertMasking.maskUrl("http://[bad")).isEqualTo("••••••");
-	}
-
 }

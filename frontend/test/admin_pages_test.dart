@@ -122,7 +122,7 @@ void main() {
       await show(tester, AlertChannelsPage(session: session()));
 
       expect(find.text('Telegram Bot'), findsOneWidget);
-      expect(find.text('Zalo Webhook'), findsOneWidget);
+      expect(find.text('Zalo Bot'), findsOneWidget);
       expect(find.text('Email'), findsOneWidget);
       expect(find.textContaining('Góp ý dưới 4 sao tại Quận 1'), findsOneWidget);
       expect(tester.takeException(), isNull);

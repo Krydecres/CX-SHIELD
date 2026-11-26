@@ -39,6 +39,14 @@ class AlertSendersTest {
 	private static final String BOT_TOKEN = "123456789:AAEabcdefghijklmnopqrstuvwxyz_12345";
 	private static final String TELEGRAM_URL = "https://api.telegram.org/bot" + BOT_TOKEN + "/sendMessage";
 	private static final String WEBHOOK_URL = "https://hook.example.com/zalo/secret";
+	private static final String ZALO_TOKEN = "12345689:abcdef-xyz";
+	private static final String ZALO_CHAT = "6ede9afa66b88fe6d6a9";
+	private static final String ZALO_URL = "https://bot-api.zaloplatforms.com/bot" + ZALO_TOKEN + "/sendMessage";
+
+	private static AlertChannelRow zaloChannel() {
+		return new AlertChannelRow(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), AlertChannelType.ZALO, ZALO_TOKEN, ZALO_CHAT,
+				null, null, true, null);
+	}
 
 	private static AlertChannelRow channel(AlertChannelType type) {
 		return new AlertChannelRow(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), type, BOT_TOKEN, "-100123", WEBHOOK_URL,
@@ -95,52 +103,72 @@ class AlertSendersTest {
 	}
 
 	@Test
-	void zaloPostsEventName() {
+	void zaloBotPostsChatIdAndText() {
 		RestClient.Builder builder = RestClient.builder();
 		MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-		WebhookUrlValidator validator = mock(WebhookUrlValidator.class);
-		ZaloWebhookAlertSender sender = new ZaloWebhookAlertSender(builder, validator);
-		server.expect(requestTo(WEBHOOK_URL))
+		ZaloBotAlertSender sender = new ZaloBotAlertSender(builder);
+		server.expect(requestTo(ZALO_URL))
 			.andExpect(method(HttpMethod.POST))
 			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-			.andExpect(jsonPath("$.event").value("review.low_rating"))
-			.andExpect(jsonPath("$.title").value("Tiêu đề"))
+			.andExpect(jsonPath("$.chat_id").value(ZALO_CHAT))
 			.andExpect(jsonPath("$.text").value("Nội dung"))
-			.andRespond(withSuccess());
+			.andRespond(withSuccess("{\"ok\":true,\"result\":{\"message_id\":\"82599fa32f56d00e8941\"}}", MediaType.APPLICATION_JSON));
 
-		sender.send(channel(AlertChannelType.ZALO), "Tiêu đề", "Nội dung");
+		sender.send(zaloChannel(), "Tiêu đề", "Nội dung");
 
 		server.verify();
-		verify(validator).validate(WEBHOOK_URL);
+		assertThat(sender.type()).isEqualTo(AlertChannelType.ZALO);
 	}
 
 	@Test
-	void zaloRejectedStatusBecomesSendError() {
+	void zaloBotOkFalseBecomesSendError() {
 		RestClient.Builder builder = RestClient.builder();
 		MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-		ZaloWebhookAlertSender sender = new ZaloWebhookAlertSender(builder, mock(WebhookUrlValidator.class));
-		server.expect(requestTo(WEBHOOK_URL)).andRespond(withStatus(HttpStatus.FOUND));
+		ZaloBotAlertSender sender = new ZaloBotAlertSender(builder);
+		server.expect(requestTo(ZALO_URL))
+			.andRespond(withSuccess("{\"ok\":false,\"error_code\":422,\"description\":\"not allowed\"}", MediaType.APPLICATION_JSON));
 
-		assertThatThrownBy(() -> sender.send(channel(AlertChannelType.ZALO), "t", "x")).isInstanceOf(AlertSendException.class)
-			.hasMessageContaining("từ chối");
+		assertThatThrownBy(() -> sender.send(zaloChannel(), "t", "x")).isInstanceOf(AlertSendException.class)
+			.hasMessageContaining("nhắn cho bot trước")
+			.hasMessageNotContaining(ZALO_TOKEN);
 	}
 
 	@Test
-	void zaloRevalidatesUrlBeforeSending() {
-		WebhookUrlValidator validator = mock(WebhookUrlValidator.class);
-		doThrow(ApiException.unprocessable("INVALID_WEBHOOK_URL", "Webhook URL không được trỏ tới mạng nội bộ."))
-			.when(validator).validate(anyString());
-		ZaloWebhookAlertSender sender = new ZaloWebhookAlertSender(RestClient.builder(), validator);
+	void zaloBotHttpErrorHidesToken() {
+		RestClient.Builder builder = RestClient.builder();
+		MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+		ZaloBotAlertSender sender = new ZaloBotAlertSender(builder);
+		server.expect(requestTo(ZALO_URL)).andRespond(withStatus(HttpStatus.UNAUTHORIZED));
 
-		assertThatThrownBy(() -> sender.send(channel(AlertChannelType.ZALO), "t", "x")).isInstanceOf(AlertSendException.class)
-			.hasMessageContaining("mạng nội bộ");
+		assertThatThrownBy(() -> sender.send(zaloChannel(), "t", "x")).isInstanceOf(AlertSendException.class)
+			.hasMessageContaining("Bot Token")
+			.hasMessageNotContaining(ZALO_TOKEN);
 	}
 
 	@Test
-	void zaloRecipientIsMasked() {
-		ZaloWebhookAlertSender sender = new ZaloWebhookAlertSender(RestClient.builder(), mock(WebhookUrlValidator.class));
+	void zaloBotNetworkFailureHidesToken() {
+		RestClient.Builder builder = RestClient.builder();
+		MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+		ZaloBotAlertSender sender = new ZaloBotAlertSender(builder);
+		server.expect(requestTo(ZALO_URL)).andRespond(request -> {
+			throw new IOException("timeout at " + ZALO_URL);
+		});
 
-		assertThat(sender.recipient(channel(AlertChannelType.ZALO))).contains("hook.example.com").doesNotContain("secret");
+		assertThatThrownBy(() -> sender.send(zaloChannel(), "t", "x")).isInstanceOf(AlertSendException.class)
+			.hasMessageNotContaining(ZALO_TOKEN);
+	}
+
+	@Test
+	void zaloBotTruncatesLongText() {
+		String text = "a".repeat(2500);
+
+		assertThat(ZaloBotAlertSender.fitLength(text)).hasSize(2000).endsWith("…");
+		assertThat(ZaloBotAlertSender.fitLength("ngắn")).isEqualTo("ngắn");
+	}
+
+	@Test
+	void zaloRecipientShowsChatId() {
+		assertThat(new ZaloBotAlertSender(RestClient.builder()).recipient(zaloChannel())).isEqualTo("Zalo " + ZALO_CHAT);
 	}
 
 	@Test
