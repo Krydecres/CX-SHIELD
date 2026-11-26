@@ -133,6 +133,27 @@ class VnpayCallbackServiceTest {
 	}
 
 	@Test
+	void cancelledReturnMarksPaymentFailedAndRedirectsToResult() {
+		String url = service.handleReturn(params("24", "02"));
+
+		assertThat(url).isEqualTo(TestProperties.FRONTEND_URL + "/#/billing/plans/result?code=" + CODE);
+		verify(repository).markFailed(CODE, "24");
+		verify(repository, never()).confirmSuccess(any(), any(), any());
+	}
+
+	@Test
+	void returnWithWrongAmountDoesNotChangePayment() {
+		Map<String, String> params = params("00", "00");
+		params.put("vnp_Amount", "100");
+
+		String url = service.handleReturn(params);
+
+		assertThat(url).isEqualTo(TestProperties.FRONTEND_URL + "/#/billing/plans/result?code=" + CODE);
+		verify(repository, never()).markFailed(any(), any());
+		verify(repository, never()).confirmSuccess(any(), any(), any());
+	}
+
+	@Test
 	void returnWithBadSignatureDoesNotExposeCode() {
 		when(gateway.verify(any())).thenReturn(false);
 
