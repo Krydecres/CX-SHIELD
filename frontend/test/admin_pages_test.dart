@@ -89,6 +89,7 @@ void main() {
       GoRoute(path: '/', builder: (context, state) => Scaffold(body: page)),
       GoRoute(path: '/billing/plans/checkout', builder: (context, state) => Text('checkout ${state.uri.query}')),
       GoRoute(path: '/billing/plans', builder: (context, state) => const Text('bảng giá')),
+      GoRoute(path: '/billing/subscription', builder: (context, state) => const Text('quản lý thuê bao')),
       GoRoute(path: '/dashboard', builder: (context, state) => const Text('tổng quan')),
     ]);
     await tester.pumpWidget(MaterialApp.router(theme: AppTheme.light(), routerConfig: router));
@@ -174,6 +175,34 @@ void main() {
       expect(calls.last.url.queryParameters['branchId'], 'c1');
     });
 
+    testWidgets('hiện cảnh báo thuê bao gần hết hạn và mở trang quản lý', (tester) async {
+      routes['/api/v1/businesses/biz/dashboard'] = {'scanCount': 0, 'ratedCount': 0, 'googleRedirectCount': 0, 'weekly': <Object>[]};
+      routes['/api/v1/businesses/biz/subscription'] = {
+        'planId': 'p2', 'planName': 'Nâng cao', 'status': 'ACTIVE',
+        'daysRemaining': 3, 'isExpiringSoon': true, 'isOverdue': false,
+      };
+
+      await show(tester, DashboardPage(session: session()));
+
+      expect(find.text('Gói dịch vụ sắp hết hạn'), findsOneWidget);
+      expect(find.textContaining('sẽ hết hạn trong 3 ngày nữa'), findsOneWidget);
+      await tester.tap(find.text('Gia hạn ngay'));
+      await tester.pumpAndSettle();
+      expect(find.text('quản lý thuê bao'), findsOneWidget);
+    });
+
+    testWidgets('không hiện cảnh báo thuê bao khi còn trên 7 ngày', (tester) async {
+      routes['/api/v1/businesses/biz/dashboard'] = {'scanCount': 0, 'ratedCount': 0, 'googleRedirectCount': 0, 'weekly': <Object>[]};
+      routes['/api/v1/businesses/biz/subscription'] = {
+        'planId': 'p2', 'planName': 'Nâng cao', 'status': 'ACTIVE',
+        'daysRemaining': 8, 'isExpiringSoon': false, 'isOverdue': false,
+      };
+
+      await show(tester, DashboardPage(session: session()));
+
+      expect(find.text('Gói dịch vụ sắp hết hạn'), findsNothing);
+      expect(find.text('Gói dịch vụ đã quá hạn thanh toán'), findsNothing);
+    });
     testWidgets('chưa có lượt quét hiện thông báo', (tester) async {
       routes['/api/v1/businesses/biz/dashboard'] = {'scanCount': 0, 'ratedCount': 0, 'googleRedirectCount': 0, 'weekly': <Object>[]};
 
